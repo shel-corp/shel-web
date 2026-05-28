@@ -1,5 +1,5 @@
 import React from 'react';
-import { notes } from '../data/content.js';
+import { notes } from '../data/content';
 
 export default function NotesSection() {
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import StatusLine from './StatusLine.jsx';
+import StatusLine from './StatusLine';
 
 export default function DocsSection() {
   return (

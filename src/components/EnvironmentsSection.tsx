@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import StatusLine from './StatusLine.jsx';
+import StatusLine from './StatusLine';
 
 export default function EnvironmentsSection() {
   return (

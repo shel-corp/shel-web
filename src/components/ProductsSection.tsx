@@ -1,5 +1,5 @@
 import React from 'react';
-import { products } from '../data/content.js';
+import { products } from '../data/content';
 
 export default function ProductsSection() {
   return (

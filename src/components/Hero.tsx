@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
-import { currentTimestamp } from '../lib/status.js';
-import StatusLine from './StatusLine.jsx';
+import { currentTimestamp } from '../lib/status';
+import StatusLine from './StatusLine';
 
 export default function Hero() {
   const lastSync = useMemo(() => currentTimestamp(), []);

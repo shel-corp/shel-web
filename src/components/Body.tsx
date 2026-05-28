@@ -1,14 +1,14 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import Home from '../views/Home.jsx';
-import Docs from '../views/Docs.jsx';
-import Products from '../views/Products.jsx';
-import Notes from '../views/Notes.jsx';
-import Careers from '../views/Careers.jsx';
-import Directory from '../views/Directory.jsx';
-import Environments from '../views/Environments.jsx';
-import Legal from '../views/Legal.jsx';
-import NotFound from '../views/NotFound.jsx';
+import Home from '../views/Home';
+import Docs from '../views/Docs';
+import Products from '../views/Products';
+import Notes from '../views/Notes';
+import Careers from '../views/Careers';
+import Directory from '../views/Directory';
+import Environments from '../views/Environments';
+import Legal from '../views/Legal';
+import NotFound from '../views/NotFound';
 
 export default function Body() {
   return (

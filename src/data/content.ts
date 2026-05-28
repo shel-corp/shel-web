@@ -1,4 +1,18 @@
-export const products = [
+export type Product = {
+  name: string;
+  description: string;
+  department: string;
+};
+
+export type Department = readonly [name: string, email: string];
+
+export type Note = {
+  title: string;
+  href: string;
+  date: string;
+};
+
+export const products: Product[] = [
   {
     name: 'Branch State Manager',
     description: 'Manages branch-specific configuration, artifacts, and notes.',
@@ -16,7 +30,7 @@ export const products = [
   },
 ];
 
-export const departments = [
+export const departments: Department[] = [
   ['General Inquiries', 'info@shelcorp.com'],
   ['Support', 'support@shelcorp.com'],
   ['Documentation Integrity', 'docs-integrity@shelcorp.com'],
@@ -35,7 +49,7 @@ export const departments = [
   ['Billing', 'billing@shelcorp.com'],
 ];
 
-export const notes = [
+export const notes: Note[] = [
   {
     title: 'Normalizing Developer Input',
     href: '/notes/normalizing-developer-input.html',

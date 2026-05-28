@@ -1,6 +1,6 @@
 import React from 'react';
-import { departments } from '../data/content.js';
-import StatusLine from './StatusLine.jsx';
+import { departments } from '../data/content';
+import StatusLine from './StatusLine';
 
 export default function DirectorySection() {
   return (
