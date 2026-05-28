@@ -1,0 +1,23 @@
+import { departments } from '../data/content.js';
+import StatusLine from './StatusLine.jsx';
+
+export default function DirectorySection() {
+  return (
+    <section id="directory">
+      <h2>Directory</h2>
+      <StatusLine className="page-status">PUBLIC CONTACT ROUTING — DEPARTMENTAL</StatusLine>
+      <div className="footer-status directory-card">
+        <div>DEPARTMENT DIRECTORY</div>
+        <br />
+        {departments.map(([department, email]) => (
+          <div key={email} className="directory-row">
+            <span>{department}</span>
+            <a href={`mailto:${email}`}>{email}</a>
+          </div>
+        ))}
+        <br />
+        <div>NOTE: Routing is automated. Responses are issued in controlled revisions.</div>
+      </div>
+    </section>
+  );
+}
