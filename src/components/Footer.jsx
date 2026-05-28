@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { checksum, currentTimestamp } from '../lib/status.js';
