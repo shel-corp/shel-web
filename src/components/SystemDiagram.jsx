@@ -1,3 +1,4 @@
+import React from 'react';
 export default function SystemDiagram() {
   return (
     <section aria-label="System Diagram">

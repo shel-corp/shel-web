@@ -1,3 +1,4 @@
+import React from 'react';
 import Hero from '../components/Hero.jsx';
 import SystemDiagram from '../components/SystemDiagram.jsx';
 import SystemOverview from '../components/SystemOverview.jsx';

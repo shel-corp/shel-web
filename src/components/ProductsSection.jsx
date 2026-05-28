@@ -1,3 +1,4 @@
+import React from 'react';
 import { products } from '../data/content.js';
 
 export default function ProductsSection() {

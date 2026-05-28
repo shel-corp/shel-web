@@ -1,3 +1,4 @@
+import React from 'react';
 import { departments } from '../data/content.js';
 import StatusLine from './StatusLine.jsx';
 
