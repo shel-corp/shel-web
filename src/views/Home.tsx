@@ -2,6 +2,7 @@ import React from 'react';
 import Hero from '../components/Hero';
 import SystemDiagram from '../components/SystemDiagram';
 import SystemOverview from '../components/SystemOverview';
+import Terminal from '../components/Terminal';
 import DocsSection from '../components/DocsSection';
 import EnvironmentsSection from '../components/EnvironmentsSection';
 import DirectorySection from '../components/DirectorySection';
@@ -15,6 +16,7 @@ export default function Home() {
       <Hero />
       <SystemDiagram />
       <SystemOverview />
+      <Terminal />
       <DocsSection />
       <EnvironmentsSection />
       <DirectorySection />
