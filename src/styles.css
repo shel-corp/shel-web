@@ -196,13 +196,59 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
 }
 
 .directory-card { white-space: normal; }
+.directory-teams {
+  display: grid;
+  gap: 22px;
+  margin-top: 28px;
+}
+.directory-team-card {
+  border: 1px solid var(--sc-gray-1);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.018);
+}
+.directory-team-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.directory-team-header .status { margin-bottom: 4px; }
+.directory-team-header span {
+  border: 1px solid var(--sc-gray-1);
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+.directory-contact-list {
+  border-top: 1px solid var(--sc-gray-1);
+  margin-top: 18px;
+  padding-top: 14px;
+}
 .directory-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.8fr);
   gap: 18px;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
-.directory-row span { color: var(--sc-gray-2); }
+.directory-row strong {
+  display: block;
+  font-weight: 500;
+}
+.directory-row span {
+  display: block;
+  color: var(--sc-gray-2);
+  font-size: 13px;
+  margin-top: 2px;
+}
+.directory-row a {
+  align-self: start;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  color: var(--sc-cyan);
+}
 
 @media (max-width: 640px) {
   header, section, footer { padding-left: 18px; padding-right: 18px; }

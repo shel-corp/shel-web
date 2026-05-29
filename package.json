@@ -8,6 +8,7 @@
     "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "test": "node --import tsx --test test/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db/migrate.ts",
     "db:check": "tsx server/db/check.ts"
