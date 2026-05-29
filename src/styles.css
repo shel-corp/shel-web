@@ -128,6 +128,73 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   overflow: auto;
 }
 
+.terminal-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1.2fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.terminal-copy .eyebrow {
+  margin-bottom: 10px;
+  color: var(--sc-cyan);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.terminal-frame {
+  border: 1px solid color-mix(in srgb, var(--sc-cyan) 36%, var(--sc-gray-1));
+  background: #070909;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), 0 0 32px rgba(77, 227, 227, 0.06);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--sc-gray-1);
+  background: linear-gradient(180deg, rgba(42, 46, 49, 0.74), rgba(11, 13, 14, 0.86));
+}
+
+.terminal-titlebar span {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--sc-gray-2);
+  border-radius: 999px;
+}
+
+.terminal-titlebar span:nth-child(1) { background: var(--sc-red); }
+.terminal-titlebar span:nth-child(2) { background: #C9A449; }
+.terminal-titlebar span:nth-child(3) { background: var(--sc-cyan); }
+
+.terminal-titlebar strong {
+  margin-left: auto;
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.terminal-host {
+  min-height: 318px;
+  padding: 14px 12px;
+}
+
+.terminal-host .xterm {
+  height: 100%;
+}
+
+.terminal-host .xterm-viewport {
+  scrollbar-color: var(--sc-gray-2) transparent;
+}
+
 .directory-card { white-space: normal; }
 .directory-row {
   display: grid;
@@ -144,4 +211,6 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   .logo svg { height: 30px; }
   h1 { font-size: 34px; }
   .directory-row { grid-template-columns: 1fr; gap: 2px; }
+  .terminal-section { grid-template-columns: 1fr; }
+  .terminal-host { min-height: 300px; padding: 12px 10px; }
 }
