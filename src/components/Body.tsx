@@ -5,6 +5,7 @@ import Docs from '../views/Docs';
 import Products from '../views/Products';
 import Notes from '../views/Notes';
 import Careers from '../views/Careers';
+import Contact from '../views/Contact';
 import Directory from '../views/Directory';
 import Environments from '../views/Environments';
 import Legal from '../views/Legal';
@@ -19,6 +20,7 @@ export default function Body() {
         <Route path="/products" element={<Products />} />
         <Route path="/notes" element={<Notes />} />
         <Route path="/careers" element={<Careers />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/directory" element={<Directory />} />
         <Route path="/environments" element={<Environments />} />
         <Route path="/environments/index.html" element={<Navigate to="/environments" replace />} />

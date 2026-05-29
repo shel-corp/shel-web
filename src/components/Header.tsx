@@ -7,6 +7,7 @@ const links = [
   ['Docs', '/docs'],
   ['Notes', '/notes'],
   ['Careers', '/careers'],
+  ['Contact', '/contact'],
   ['Directory', '/directory'],
   ['Environments', '/environments'],
 ];
