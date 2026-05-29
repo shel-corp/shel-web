@@ -249,6 +249,12 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   font-size: 13px;
   color: var(--sc-cyan);
 }
+.directory-prompt {
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
 
 @media (max-width: 640px) {
   header, section, footer { padding-left: 18px; padding-right: 18px; }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { companyDirectorySummary, companyDirectoryTeams } from '../data/companyDirectory';
+import { companyDirectorySummary, companyDirectoryTeams } from '../data/generated/companyDirectory';
 import StatusLine from './StatusLine';
 
 export default function DirectorySection() {
@@ -8,8 +8,8 @@ export default function DirectorySection() {
       <h2>Company Directory</h2>
       <StatusLine className="page-status">{companyDirectorySummary.classification}</StatusLine>
       <p>
-        Public contact routes are grouped by accountable Shelcorp team. Use the most specific
-        route available; unclassified requests enter Commercial Operations for triage.
+        Public user records are grouped by accountable Shelcorp team. Each record is sourced from the
+        users table and includes the routing persona used for controlled contact surfaces.
       </p>
 
       <div className="directory-teams">
@@ -17,20 +17,20 @@ export default function DirectorySection() {
           <article key={team.id} className="directory-team-card">
             <div className="directory-team-header">
               <div>
-                <p className="status">{team.id} · {team.code}</p>
+                <p className="status">{team.id}</p>
                 <h3>{team.name}</h3>
               </div>
-              <span>{team.contacts.length} ROUTES</span>
+              <span>{team.users.length} USERS</span>
             </div>
-            <p>{team.mandate}</p>
             <div className="directory-contact-list">
-              {team.contacts.map((contact) => (
-                <div key={contact.email} className="directory-row">
+              {team.users.map((user) => (
+                <div key={user.id} className="directory-row">
                   <div>
-                    <strong>{contact.name}</strong>
-                    <span>{contact.channel}</span>
+                    <strong>{user.name}</strong>
+                    <span>{user.role}</span>
+                    <span>{user.personality}</span>
                   </div>
-                  <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                  <div className="directory-prompt">{user.systemPrompt}</div>
                 </div>
               ))}
             </div>

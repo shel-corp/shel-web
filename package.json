@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --strictPort",
     "typecheck": "tsc -b",
-    "build": "tsc -b && vite build",
+    "build": "npm run db:export-directory && tsc -b && npm exec --package=node@20 -- node ./node_modules/vite/bin/vite.js build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --import tsx --test test/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db/migrate.ts",
-    "db:check": "tsx server/db/check.ts"
+    "db:check": "tsx server/db/check.ts",
+    "db:seed": "tsx server/db/seedUsers.ts",
+    "db:export-directory": "tsx server/db/exportCompanyDirectory.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.1.48",
