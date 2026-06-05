@@ -25,6 +25,21 @@ export type HazenWilliamsResult = HazenWilliamsInputs & {
   pressureLossPsi: number;
 };
 
+export type DarcyWeisbachInputs = {
+  velocityFeetPerSecond: number;
+  diameterInches: number;
+  darcyFrictionFactor: number;
+  pipeLengthFeet: number;
+};
+
+export type DarcyWeisbachResult = DarcyWeisbachInputs & {
+  diameterFeet: number;
+  velocityHeadFeet: number;
+  headLossFeet: number;
+  headLossFeetPer100Feet: number;
+  pressureLossPsi: number;
+};
+
 export type EquationOption = {
   id: string;
   name: string;
@@ -58,6 +73,14 @@ const HAZEN_WILLIAMS_ROUGHNESS_EXPONENT = 1.85;
 const HAZEN_WILLIAMS_DIAMETER_EXPONENT = 4.87;
 const FEET_PER_100_FEET = 100;
 const PSI_PER_FOOT_OF_WATER = 0.433;
+
+// Darcy-Weisbach constants for US customary water-operator calculations.
+// The equation comes from mechanical energy balance: friction factor × pipe
+// length/diameter × velocity head. Standard gravity is the only dimensional
+// constant; f is a dimensionless value found from Moody chart/Colebrook-style
+// friction correlations or supplied by the problem.
+const STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED = 32.174;
+const VELOCITY_HEAD_DENOMINATOR = 2;
 
 // Display-only bounds for the pipe cross-section graphic. The log scale keeps
 // small pipes visible while preventing large-pipe examples from overflowing.
@@ -93,10 +116,26 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
       '0.433 psi per ft of water converts calculated head loss into pressure loss.',
     ],
   },
+  {
+    id: 'darcy-weisbach-head-loss',
+    name: 'Darcy-Weisbach head loss',
+    formula: 'hₗ = f × L/D × v²/(2g)',
+    description:
+      'Calculates friction head loss from velocity, pipe diameter, pipe length, and the Darcy friction factor. It is more general than Hazen-Williams because the friction factor can account for fluid properties, roughness, and flow regime.',
+    examUse:
+      'Use it when a problem gives velocity and a Darcy friction factor, asks for velocity-head-based friction loss, or compares laminar/turbulent friction effects. In this US customary form: v is ft/s, D and L are feet, g is 32.174 ft/s², and hₗ is feet of water.',
+    coefficientOrigin:
+      'How the numbers were discovered: Darcy and Weisbach connected observed pipe-friction losses to the mechanical-energy term v²/(2g), then experiments and later Moody/Colebrook correlations showed how the dimensionless friction factor f changes with Reynolds number and pipe roughness. Unlike Hazen-Williams, the main coefficient is not a curve-fit unit constant; most system-specific behavior is carried by f.',
+    coefficientNotes: [
+      'f is the dimensionless friction factor. It is usually supplied in exam problems or found from pipe roughness and Reynolds number using a Moody chart or Colebrook-style relationship.',
+      '32.174 ft/s² is standard gravitational acceleration. The 2g term converts velocity squared into velocity head in feet of water.',
+      'L/D is a dimensionless pipe-length-to-diameter ratio. Diameter is converted from inches to feet before using the formula.',
+      '0.433 psi per ft of water converts calculated head loss into pressure loss.',
+    ],
+  },
 ];
 
 export const futureFluidDynamicsEquations = [
-  'Darcy-Weisbach head loss: friction loss from velocity, diameter, and friction factor',
   'Reynolds number: laminar/transitional/turbulent flow classification',
   'Bernoulli energy equation: elevation head, pressure head, and velocity head',
   'Detention time: volume divided by flow for basins, tanks, and clearwells',
@@ -133,6 +172,24 @@ export function calculateHazenWilliamsHeadLoss(inputs: HazenWilliamsInputs): Haz
 
   return {
     ...inputs,
+    headLossFeet,
+    headLossFeetPer100Feet,
+    pressureLossPsi,
+  };
+}
+
+export function calculateDarcyWeisbachHeadLoss(inputs: DarcyWeisbachInputs): DarcyWeisbachResult {
+  const diameterFeet = inputs.diameterInches / INCHES_PER_FOOT;
+  const velocityHeadFeet =
+    inputs.velocityFeetPerSecond ** 2 / (VELOCITY_HEAD_DENOMINATOR * STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED);
+  const headLossFeet = inputs.darcyFrictionFactor * (inputs.pipeLengthFeet / diameterFeet) * velocityHeadFeet;
+  const headLossFeetPer100Feet = (headLossFeet / inputs.pipeLengthFeet) * FEET_PER_100_FEET;
+  const pressureLossPsi = headLossFeet * PSI_PER_FOOT_OF_WATER;
+
+  return {
+    ...inputs,
+    diameterFeet,
+    velocityHeadFeet,
     headLossFeet,
     headLossFeetPer100Feet,
     pressureLossPsi,

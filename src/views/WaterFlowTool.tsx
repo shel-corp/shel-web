@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import {
   calculateContinuityFlow,
+  calculateDarcyWeisbachHeadLoss,
   calculateHazenWilliamsHeadLoss,
   calculatePipeVisualSizePercent,
   fluidDynamicsEquationOptions,
@@ -24,11 +25,13 @@ export default function WaterFlowTool() {
   const [velocityFeetPerSecond, setVelocityFeetPerSecond] = useState(3);
   const [flowGallonsPerMinute, setFlowGallonsPerMinute] = useState(1000);
   const [hazenWilliamsC, setHazenWilliamsC] = useState(120);
+  const [darcyFrictionFactor, setDarcyFrictionFactor] = useState(0.02);
   const [pipeLengthFeet, setPipeLengthFeet] = useState(1000);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const equation = fluidDynamicsEquationOptions.find((option) => option.id === equationId) ?? fluidDynamicsEquationOptions[0];
   const isHazenWilliams = equationId === 'hazen-williams-head-loss';
+  const isDarcyWeisbach = equationId === 'darcy-weisbach-head-loss';
   const continuityResult = useMemo(
     () => calculateContinuityFlow({ diameterInches, velocityFeetPerSecond }),
     [diameterInches, velocityFeetPerSecond],
@@ -36,6 +39,10 @@ export default function WaterFlowTool() {
   const hazenWilliamsResult = useMemo(
     () => calculateHazenWilliamsHeadLoss({ flowGallonsPerMinute, diameterInches, hazenWilliamsC, pipeLengthFeet }),
     [diameterInches, flowGallonsPerMinute, hazenWilliamsC, pipeLengthFeet],
+  );
+  const darcyWeisbachResult = useMemo(
+    () => calculateDarcyWeisbachHeadLoss({ velocityFeetPerSecond, diameterInches, darcyFrictionFactor, pipeLengthFeet }),
+    [darcyFrictionFactor, diameterInches, pipeLengthFeet, velocityFeetPerSecond],
   );
 
   const chart = useMemo(() => {
@@ -64,6 +71,31 @@ export default function WaterFlowTool() {
       };
     }
 
+    if (isDarcyWeisbach) {
+      const points = d3.range(0.5, 10.1, 0.25).map((velocity) => ({
+        xValue: velocity,
+        yValue: calculateDarcyWeisbachHeadLoss({
+          velocityFeetPerSecond: velocity,
+          diameterInches,
+          darcyFrictionFactor,
+          pipeLengthFeet,
+        }).headLossFeet,
+      }));
+
+      return {
+        title: `Head loss curve at ${formatNumber(diameterInches, 1)} in, f=${formatNumber(darcyFrictionFactor, 3)}`,
+        xDomain: [0, 10] as [number, number],
+        yMax: d3.max(points, (point) => point.yValue) ?? 1,
+        xAxisLabel: 'Velocity',
+        yAxisLabel: 'Head loss, ft',
+        currentX: velocityFeetPerSecond,
+        currentY: darcyWeisbachResult.headLossFeet,
+        xTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 1)} ft/s`,
+        yTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 0)} ft`,
+        points,
+      };
+    }
+
     const points = d3.range(1, 25, 0.5).map((diameter) => ({
       xValue: diameter,
       yValue: calculateContinuityFlow({ diameterInches: diameter, velocityFeetPerSecond }).flowGallonsPerMinute,
@@ -81,7 +113,7 @@ export default function WaterFlowTool() {
       yTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))}`,
       points,
     };
-  }, [continuityResult.flowGallonsPerMinute, diameterInches, flowGallonsPerMinute, hazenWilliamsC, hazenWilliamsResult.headLossFeet, isHazenWilliams, pipeLengthFeet, velocityFeetPerSecond]);
+  }, [continuityResult.flowGallonsPerMinute, darcyFrictionFactor, darcyWeisbachResult.headLossFeet, diameterInches, flowGallonsPerMinute, hazenWilliamsC, hazenWilliamsResult.headLossFeet, isDarcyWeisbach, isHazenWilliams, pipeLengthFeet, velocityFeetPerSecond]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -181,6 +213,17 @@ export default function WaterFlowTool() {
   }, [chart]);
 
   const pipeVisualSizePercent = calculatePipeVisualSizePercent(diameterInches);
+  const chartHeading = isHazenWilliams || isDarcyWeisbach ? 'Velocity/flow-to-head-loss relationship' : 'Diameter-to-flow relationship';
+  const chartDescription = isHazenWilliams
+    ? 'The curve shows why head loss climbs quickly as flow increases: Hazen-Williams raises flow to the 1.85 power, so higher demand produces disproportionate friction loss.'
+    : isDarcyWeisbach
+      ? 'The curve shows why higher velocity increases friction loss sharply: Darcy-Weisbach uses velocity squared inside the velocity-head term.'
+      : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.';
+  const chartAriaLabel = isHazenWilliams
+    ? 'Line chart showing head loss increasing as flow increases'
+    : isDarcyWeisbach
+      ? 'Line chart showing head loss increasing as velocity increases'
+      : 'Line chart showing flow increasing as pipe diameter increases';
 
   return (
     <section className="water-tool-section">
@@ -281,26 +324,6 @@ export default function WaterFlowTool() {
                 value={hazenWilliamsC}
                 onChange={(event) => setHazenWilliamsC(Number(event.target.value))}
               />
-
-              <label htmlFor="length-input">Pipe length: {formatNumber(pipeLengthFeet, 0)} ft</label>
-              <input
-                id="length-input"
-                type="range"
-                min="100"
-                max="5000"
-                step="50"
-                value={pipeLengthFeet}
-                onChange={(event) => setPipeLengthFeet(Number(event.target.value))}
-              />
-              <input
-                aria-label="Pipe length in feet"
-                type="number"
-                min="100"
-                max="5000"
-                step="50"
-                value={pipeLengthFeet}
-                onChange={(event) => setPipeLengthFeet(Number(event.target.value))}
-              />
             </>
           ) : (
             <>
@@ -323,8 +346,56 @@ export default function WaterFlowTool() {
                 value={velocityFeetPerSecond}
                 onChange={(event) => setVelocityFeetPerSecond(Number(event.target.value))}
               />
+
+              {isDarcyWeisbach ? (
+                <>
+                  <label htmlFor="friction-factor-input">Darcy friction factor: {formatNumber(darcyFrictionFactor, 3)}</label>
+                  <input
+                    id="friction-factor-input"
+                    type="range"
+                    min="0.005"
+                    max="0.08"
+                    step="0.001"
+                    value={darcyFrictionFactor}
+                    onChange={(event) => setDarcyFrictionFactor(Number(event.target.value))}
+                  />
+                  <input
+                    aria-label="Darcy friction factor"
+                    type="number"
+                    min="0.005"
+                    max="0.08"
+                    step="0.001"
+                    value={darcyFrictionFactor}
+                    onChange={(event) => setDarcyFrictionFactor(Number(event.target.value))}
+                  />
+                </>
+              ) : null}
             </>
           )}
+
+          {isHazenWilliams || isDarcyWeisbach ? (
+            <>
+              <label htmlFor="length-input">Pipe length: {formatNumber(pipeLengthFeet, 0)} ft</label>
+              <input
+                id="length-input"
+                type="range"
+                min="100"
+                max="5000"
+                step="50"
+                value={pipeLengthFeet}
+                onChange={(event) => setPipeLengthFeet(Number(event.target.value))}
+              />
+              <input
+                aria-label="Pipe length in feet"
+                type="number"
+                min="100"
+                max="5000"
+                step="50"
+                value={pipeLengthFeet}
+                onChange={(event) => setPipeLengthFeet(Number(event.target.value))}
+              />
+            </>
+          ) : null}
         </div>
 
         <div className="water-panel raw-number-panel">
@@ -338,6 +409,17 @@ export default function WaterFlowTool() {
               <div><dt>Head loss</dt><dd>{formatNumber(hazenWilliamsResult.headLossFeet, 3)} ft</dd></div>
               <div><dt>Head loss</dt><dd>{formatNumber(hazenWilliamsResult.headLossFeetPer100Feet, 3)} ft / 100 ft</dd></div>
               <div><dt>Pressure loss</dt><dd>{formatNumber(hazenWilliamsResult.pressureLossPsi, 3)} psi</dd></div>
+            </dl>
+          ) : isDarcyWeisbach ? (
+            <dl className="metric-list">
+              <div><dt>Velocity</dt><dd>{formatNumber(darcyWeisbachResult.velocityFeetPerSecond, 1)} ft/s</dd></div>
+              <div><dt>Diameter</dt><dd>{formatNumber(darcyWeisbachResult.diameterFeet, 3)} ft</dd></div>
+              <div><dt>Friction factor</dt><dd>{formatNumber(darcyWeisbachResult.darcyFrictionFactor, 3)}</dd></div>
+              <div><dt>Length</dt><dd>{formatNumber(darcyWeisbachResult.pipeLengthFeet, 0)} ft</dd></div>
+              <div><dt>Velocity head</dt><dd>{formatNumber(darcyWeisbachResult.velocityHeadFeet, 3)} ft</dd></div>
+              <div><dt>Head loss</dt><dd>{formatNumber(darcyWeisbachResult.headLossFeet, 3)} ft</dd></div>
+              <div><dt>Head loss</dt><dd>{formatNumber(darcyWeisbachResult.headLossFeetPer100Feet, 3)} ft / 100 ft</dd></div>
+              <div><dt>Pressure loss</dt><dd>{formatNumber(darcyWeisbachResult.pressureLossPsi, 3)} psi</dd></div>
             </dl>
           ) : (
             <dl className="metric-list">
@@ -358,13 +440,9 @@ export default function WaterFlowTool() {
       </div>
 
       <div className="water-panel chart-panel">
-        <h2>{isHazenWilliams ? 'Flow-to-head-loss relationship' : 'Diameter-to-flow relationship'}</h2>
-        <p>
-          {isHazenWilliams
-            ? 'The curve shows why head loss climbs quickly as flow increases: Hazen-Williams raises flow to the 1.85 power, so higher demand produces disproportionate friction loss.'
-            : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.'}
-        </p>
-        <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={isHazenWilliams ? 'Line chart showing head loss increasing as flow increases' : 'Line chart showing flow increasing as pipe diameter increases'} />
+        <h2>{chartHeading}</h2>
+        <p>{chartDescription}</p>
+        <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={chartAriaLabel} />
       </div>
 
       <div className="water-panel future-equations">
