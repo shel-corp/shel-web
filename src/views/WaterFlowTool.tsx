@@ -203,6 +203,14 @@ export default function WaterFlowTool() {
           <div className="equation-card">
             <strong>{equation.formula}</strong>
             <p>{equation.description}</p>
+            {equation.coefficientNotes ? (
+              <div className="coefficient-notes">
+                <p className="status">COEFFICIENT NOTES</p>
+                <ul>
+                  {equation.coefficientNotes.map((note) => <li key={note}>{note}</li>)}
+                </ul>
+              </div>
+            ) : null}
             <p className="status">EXAM USE: {equation.examUse}</p>
           </div>
 

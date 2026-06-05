@@ -31,7 +31,37 @@ export type EquationOption = {
   formula: string;
   description: string;
   examUse: string;
+  coefficientNotes?: string[];
 };
+
+const INCHES_PER_FOOT = 12;
+const RADIUS_FROM_DIAMETER = 2;
+
+// Exact/standard water-unit conversions used by the continuity equation.
+const GALLONS_PER_CUBIC_FOOT = 7.48052;
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_DAY = 1440;
+const MILLION = 1_000_000;
+const GPM_PER_CFS = GALLONS_PER_CUBIC_FOOT * SECONDS_PER_MINUTE;
+const MGD_PER_CFS = (GALLONS_PER_CUBIC_FOOT * SECONDS_PER_MINUTE * MINUTES_PER_DAY) / MILLION;
+
+// Hazen-Williams empirical constants for the common US customary form:
+// hₗ(ft) = 4.52 × L(ft) × Q(gpm)^1.85 ÷ (C^1.85 × d(in)^4.87).
+// They are not derived from first principles; they fit observed turbulent water flow
+// in pressurized pipe and bake in the ft/gpm/in unit conversions.
+const HAZEN_WILLIAMS_US_COEFFICIENT = 4.52;
+const HAZEN_WILLIAMS_FLOW_EXPONENT = 1.85;
+const HAZEN_WILLIAMS_ROUGHNESS_EXPONENT = 1.85;
+const HAZEN_WILLIAMS_DIAMETER_EXPONENT = 4.87;
+const FEET_PER_100_FEET = 100;
+const PSI_PER_FOOT_OF_WATER = 0.433;
+
+// Display-only bounds for the pipe cross-section graphic. The log scale keeps
+// small pipes visible while preventing large-pipe examples from overflowing.
+const MIN_VISUAL_DIAMETER_INCHES = 1;
+const MAX_VISUAL_DIAMETER_INCHES = 24;
+const MIN_PIPE_VISUAL_SIZE_PERCENT = 14;
+const MAX_PIPE_VISUAL_SIZE_PERCENT = 88;
 
 export const fluidDynamicsEquationOptions: EquationOption[] = [
   {
@@ -51,6 +81,12 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
       'Estimates friction head loss through pressurized water pipe using flow, pipe diameter, pipe length, and the Hazen-Williams roughness coefficient.',
     examUse:
       'Use it when a water distribution problem asks for friction loss, pressure loss, or the effect of pipe size/material on head loss. In this US customary form: Q is gpm, d is inches, L is feet, and hₗ is feet of water.',
+    coefficientNotes: [
+      '4.52 is the empirical US-customary coefficient; it folds observed water-flow behavior together with the gpm, inch, foot unit choices.',
+      '1.85 is the empirical exponent on both flow Q and roughness C. Because Q is raised above 1, head loss increases faster than flow.',
+      '4.87 is the empirical diameter exponent. The large exponent is why small diameter changes have a big impact on friction loss.',
+      '0.433 psi per ft of water converts calculated head loss into pressure loss.',
+    ],
   },
 ];
 
@@ -63,12 +99,12 @@ export const futureFluidDynamicsEquations = [
 ] as const;
 
 export function calculateContinuityFlow(inputs: ContinuityInputs): ContinuityResult {
-  const diameterFeet = inputs.diameterInches / 12;
-  const radiusFeet = diameterFeet / 2;
+  const diameterFeet = inputs.diameterInches / INCHES_PER_FOOT;
+  const radiusFeet = diameterFeet / RADIUS_FROM_DIAMETER;
   const areaSquareFeet = Math.PI * radiusFeet ** 2;
   const flowCubicFeetPerSecond = areaSquareFeet * inputs.velocityFeetPerSecond;
-  const flowGallonsPerMinute = flowCubicFeetPerSecond * 448.831;
-  const flowMillionGallonsPerDay = flowCubicFeetPerSecond * 0.646317;
+  const flowGallonsPerMinute = flowCubicFeetPerSecond * GPM_PER_CFS;
+  const flowMillionGallonsPerDay = flowCubicFeetPerSecond * MGD_PER_CFS;
 
   return {
     ...inputs,
@@ -83,12 +119,12 @@ export function calculateContinuityFlow(inputs: ContinuityInputs): ContinuityRes
 
 export function calculateHazenWilliamsHeadLoss(inputs: HazenWilliamsInputs): HazenWilliamsResult {
   const headLossFeet =
-    (4.52 *
+    (HAZEN_WILLIAMS_US_COEFFICIENT *
       inputs.pipeLengthFeet *
-      inputs.flowGallonsPerMinute ** 1.85) /
-    (inputs.hazenWilliamsC ** 1.85 * inputs.diameterInches ** 4.87);
-  const headLossFeetPer100Feet = (headLossFeet / inputs.pipeLengthFeet) * 100;
-  const pressureLossPsi = headLossFeet * 0.433;
+      inputs.flowGallonsPerMinute ** HAZEN_WILLIAMS_FLOW_EXPONENT) /
+    (inputs.hazenWilliamsC ** HAZEN_WILLIAMS_ROUGHNESS_EXPONENT * inputs.diameterInches ** HAZEN_WILLIAMS_DIAMETER_EXPONENT);
+  const headLossFeetPer100Feet = (headLossFeet / inputs.pipeLengthFeet) * FEET_PER_100_FEET;
+  const pressureLossPsi = headLossFeet * PSI_PER_FOOT_OF_WATER;
 
   return {
     ...inputs,
@@ -99,14 +135,12 @@ export function calculateHazenWilliamsHeadLoss(inputs: HazenWilliamsInputs): Haz
 }
 
 export function calculatePipeVisualSizePercent(diameterInches: number): number {
-  const minDiameter = 1;
-  const maxDiameter = 24;
-  const minSizePercent = 14;
-  const maxSizePercent = 88;
-  const clampedDiameter = Math.min(maxDiameter, Math.max(minDiameter, diameterInches));
-  const normalizedLogScale = Math.log(clampedDiameter / minDiameter + 1) / Math.log(maxDiameter / minDiameter + 1);
+  const clampedDiameter = Math.min(MAX_VISUAL_DIAMETER_INCHES, Math.max(MIN_VISUAL_DIAMETER_INCHES, diameterInches));
+  const normalizedLogScale =
+    Math.log(clampedDiameter / MIN_VISUAL_DIAMETER_INCHES + 1) /
+    Math.log(MAX_VISUAL_DIAMETER_INCHES / MIN_VISUAL_DIAMETER_INCHES + 1);
 
-  return minSizePercent + normalizedLogScale * (maxSizePercent - minSizePercent);
+  return MIN_PIPE_VISUAL_SIZE_PERCENT + normalizedLogScale * (MAX_PIPE_VISUAL_SIZE_PERCENT - MIN_PIPE_VISUAL_SIZE_PERCENT);
 }
 
 export function formatNumber(value: number, digits = 2): string {
