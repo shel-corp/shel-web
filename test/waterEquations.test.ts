@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateContinuityFlow, calculatePipeVisualSizePercent, fluidDynamicsEquationOptions } from "../src/lib/waterEquations";
+import { calculateContinuityFlow, calculateHazenWilliamsHeadLoss, calculatePipeVisualSizePercent, fluidDynamicsEquationOptions } from "../src/lib/waterEquations";
 
 test("continuity equation converts diameter and velocity into cfs, gpm, and MGD", () => {
   const result = calculateContinuityFlow({ diameterInches: 12, velocityFeetPerSecond: 2 });
@@ -15,7 +15,7 @@ test("continuity equation converts diameter and velocity into cfs, gpm, and MGD"
 });
 
 test("equation selector starts with the continuity flow relationship", () => {
-  assert.deepEqual(fluidDynamicsEquationOptions.map((equation) => equation.id), ["continuity-flow"]);
+  assert.deepEqual(fluidDynamicsEquationOptions.map((equation) => equation.id), ["continuity-flow", "hazen-williams-head-loss"]);
   assert.match(fluidDynamicsEquationOptions[0].formula, /Q = A/);
 });
 
@@ -31,4 +31,18 @@ test("pipe visual uses a bounded logarithmic scale", () => {
   assert.ok(oneInch < twelveInch);
   assert.ok(twelveInch < twentyFourInch);
   assert.ok(twelveInch > 51, "log scale should make mid-range diameters legible");
+});
+
+
+test("Hazen-Williams equation calculates head loss from gpm, pipe, C factor, and length", () => {
+  const result = calculateHazenWilliamsHeadLoss({
+    flowGallonsPerMinute: 1000,
+    diameterInches: 8,
+    hazenWilliamsC: 120,
+    pipeLengthFeet: 1000,
+  });
+
+  assert.ok(Math.abs(result.headLossFeet - 9.1328) < 0.001);
+  assert.ok(Math.abs(result.headLossFeetPer100Feet - 0.9133) < 0.001);
+  assert.ok(Math.abs(result.pressureLossPsi - 3.9545) < 0.001);
 });

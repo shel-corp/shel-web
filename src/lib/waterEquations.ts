@@ -12,6 +12,19 @@ export type ContinuityResult = ContinuityInputs & {
   flowMillionGallonsPerDay: number;
 };
 
+export type HazenWilliamsInputs = {
+  flowGallonsPerMinute: number;
+  diameterInches: number;
+  hazenWilliamsC: number;
+  pipeLengthFeet: number;
+};
+
+export type HazenWilliamsResult = HazenWilliamsInputs & {
+  headLossFeet: number;
+  headLossFeetPer100Feet: number;
+  pressureLossPsi: number;
+};
+
 export type EquationOption = {
   id: string;
   name: string;
@@ -30,10 +43,18 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
     examUse:
       'Use it when a problem gives a pipe diameter plus velocity and asks for cfs, gpm, or MGD. This is the first building block before head loss, detention time, and dosage problems.',
   },
+  {
+    id: 'hazen-williams-head-loss',
+    name: 'Hazen-Williams head loss',
+    formula: 'hₗ = 4.52 × L × Q^1.85 ÷ (C^1.85 × d^4.87)',
+    description:
+      'Estimates friction head loss through pressurized water pipe using flow, pipe diameter, pipe length, and the Hazen-Williams roughness coefficient.',
+    examUse:
+      'Use it when a water distribution problem asks for friction loss, pressure loss, or the effect of pipe size/material on head loss. In this US customary form: Q is gpm, d is inches, L is feet, and hₗ is feet of water.',
+  },
 ];
 
 export const futureFluidDynamicsEquations = [
-  'Hazen-Williams head loss: pressure loss through water mains',
   'Darcy-Weisbach head loss: friction loss from velocity, diameter, and friction factor',
   'Reynolds number: laminar/transitional/turbulent flow classification',
   'Bernoulli energy equation: elevation head, pressure head, and velocity head',
@@ -57,6 +78,23 @@ export function calculateContinuityFlow(inputs: ContinuityInputs): ContinuityRes
     flowCubicFeetPerSecond,
     flowGallonsPerMinute,
     flowMillionGallonsPerDay,
+  };
+}
+
+export function calculateHazenWilliamsHeadLoss(inputs: HazenWilliamsInputs): HazenWilliamsResult {
+  const headLossFeet =
+    (4.52 *
+      inputs.pipeLengthFeet *
+      inputs.flowGallonsPerMinute ** 1.85) /
+    (inputs.hazenWilliamsC ** 1.85 * inputs.diameterInches ** 4.87);
+  const headLossFeetPer100Feet = (headLossFeet / inputs.pipeLengthFeet) * 100;
+  const pressureLossPsi = headLossFeet * 0.433;
+
+  return {
+    ...inputs,
+    headLossFeet,
+    headLossFeetPer100Feet,
+    pressureLossPsi,
   };
 }
 
