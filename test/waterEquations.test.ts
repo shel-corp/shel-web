@@ -7,6 +7,10 @@ import {
   calculateDarcyWeisbachHeadLoss,
   calculateHazenWilliamsHeadLoss,
   calculatePipeVisualSizePercent,
+  calculateReynoldsNumber,
+  calculateDetentionTime,
+  calculateWeirFlow,
+  calculateOrificeFlow,
   fluidDynamicsEquationOptions,
 } from "../src/lib/waterEquations";
 
@@ -27,6 +31,9 @@ test("equation selector starts with the continuity flow relationship", () => {
     "hazen-williams-head-loss",
     "darcy-weisbach-head-loss",
     "bernoulli-energy",
+    "reynolds-number",
+    "detention-time",
+    "weir-orifice-flow",
   ]);
   assert.match(fluidDynamicsEquationOptions[0].formula, /Q = A/);
 });
@@ -116,4 +123,47 @@ test("Bernoulli equation calculates elevation, pressure, velocity, and total ene
   assert.ok(Math.abs(result.downstreamTotalHeadFeet - 116.4056) < 0.001);
   assert.ok(Math.abs(result.energyDifferenceFeet - 9.2277) < 0.001);
   assert.ok(Math.abs(result.energyDifferencePsi - 3.9956) < 0.001);
+});
+
+test("Reynolds number classifies laminar, transitional, and turbulent flow", () => {
+  const turbulent = calculateReynoldsNumber({
+    velocityFeetPerSecond: 3,
+    diameterInches: 8,
+    kinematicViscositySquareFeetPerSecond: 0.000011,
+  });
+  const laminar = calculateReynoldsNumber({
+    velocityFeetPerSecond: 0.01,
+    diameterInches: 1,
+    kinematicViscositySquareFeetPerSecond: 0.000011,
+  });
+  const transitional = calculateReynoldsNumber({
+    velocityFeetPerSecond: 0.4,
+    diameterInches: 1,
+    kinematicViscositySquareFeetPerSecond: 0.000011,
+  });
+
+  assert.ok(Math.abs(turbulent.diameterFeet - 0.6667) < 0.001);
+  assert.ok(Math.abs(turbulent.reynoldsNumber - 181818.1818) < 0.001);
+  assert.equal(turbulent.flowRegime, "turbulent");
+  assert.equal(laminar.flowRegime, "laminar");
+  assert.equal(transitional.flowRegime, "transitional");
+});
+
+test("detention time converts basin volume and flow into minutes, hours, and days", () => {
+  const result = calculateDetentionTime({ volumeGallons: 500000, flowGallonsPerMinute: 1000 });
+
+  assert.equal(result.detentionTimeMinutes, 500);
+  assert.ok(Math.abs(result.detentionTimeHours - 8.3333) < 0.001);
+  assert.ok(Math.abs(result.detentionTimeDays - 0.3472) < 0.001);
+});
+
+test("weir and orifice equations calculate discharge from head and opening geometry", () => {
+  const weir = calculateWeirFlow({ weirLengthFeet: 2, headFeet: 0.75, weirCoefficient: 3.33 });
+  const orifice = calculateOrificeFlow({ orificeDiameterInches: 6, headFeet: 4, dischargeCoefficient: 0.62 });
+
+  assert.ok(Math.abs(weir.flowCubicFeetPerSecond - 4.3258) < 0.001);
+  assert.ok(Math.abs(weir.flowGallonsPerMinute - 1941.553) < 0.01);
+  assert.ok(Math.abs(orifice.areaSquareFeet - 0.19635) < 0.001);
+  assert.ok(Math.abs(orifice.flowCubicFeetPerSecond - 1.9531) < 0.001);
+  assert.ok(Math.abs(orifice.flowGallonsPerMinute - 876.601) < 0.01);
 });

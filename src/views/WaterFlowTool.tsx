@@ -4,8 +4,12 @@ import {
   calculateBernoulliEnergy,
   calculateContinuityFlow,
   calculateDarcyWeisbachHeadLoss,
+  calculateDetentionTime,
   calculateHazenWilliamsHeadLoss,
+  calculateOrificeFlow,
   calculatePipeVisualSizePercent,
+  calculateReynoldsNumber,
+  calculateWeirFlow,
   fluidDynamicsEquationOptions,
   formatNumber,
   futureFluidDynamicsEquations,
@@ -34,12 +38,25 @@ export default function WaterFlowTool() {
   const [downstreamElevationFeet, setDownstreamElevationFeet] = useState(12);
   const [downstreamPressurePsi, setDownstreamPressurePsi] = useState(45);
   const [downstreamVelocityFeetPerSecond, setDownstreamVelocityFeetPerSecond] = useState(6);
+  const [kinematicViscositySquareFeetPerSecond, setKinematicViscositySquareFeetPerSecond] = useState(0.000011);
+  const [detentionVolumeGallons, setDetentionVolumeGallons] = useState(500000);
+  const [detentionFlowGallonsPerMinute, setDetentionFlowGallonsPerMinute] = useState(1000);
+  const [weirLengthFeet, setWeirLengthFeet] = useState(2);
+  const [weirHeadFeet, setWeirHeadFeet] = useState(0.75);
+  const [weirCoefficient, setWeirCoefficient] = useState(3.33);
+  const [orificeDiameterInches, setOrificeDiameterInches] = useState(6);
+  const [orificeHeadFeet, setOrificeHeadFeet] = useState(4);
+  const [orificeDischargeCoefficient, setOrificeDischargeCoefficient] = useState(0.62);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const equation = fluidDynamicsEquationOptions.find((option) => option.id === equationId) ?? fluidDynamicsEquationOptions[0];
   const isHazenWilliams = equationId === 'hazen-williams-head-loss';
   const isDarcyWeisbach = equationId === 'darcy-weisbach-head-loss';
   const isBernoulli = equationId === 'bernoulli-energy';
+  const isReynolds = equationId === 'reynolds-number';
+  const isDetentionTime = equationId === 'detention-time';
+  const isWeirOrifice = equationId === 'weir-orifice-flow';
+  const usesPipeDiameter = !isBernoulli && !isDetentionTime && !isWeirOrifice;
   const continuityResult = useMemo(
     () => calculateContinuityFlow({ diameterInches, velocityFeetPerSecond }),
     [diameterInches, velocityFeetPerSecond],
@@ -70,6 +87,27 @@ export default function WaterFlowTool() {
       upstreamPressurePsi,
       upstreamVelocityFeetPerSecond,
     ],
+  );
+  const reynoldsResult = useMemo(
+    () => calculateReynoldsNumber({ diameterInches, velocityFeetPerSecond, kinematicViscositySquareFeetPerSecond }),
+    [diameterInches, kinematicViscositySquareFeetPerSecond, velocityFeetPerSecond],
+  );
+  const detentionTimeResult = useMemo(
+    () => calculateDetentionTime({ volumeGallons: detentionVolumeGallons, flowGallonsPerMinute: detentionFlowGallonsPerMinute }),
+    [detentionFlowGallonsPerMinute, detentionVolumeGallons],
+  );
+  const weirResult = useMemo(
+    () => calculateWeirFlow({ weirLengthFeet, headFeet: weirHeadFeet, weirCoefficient }),
+    [weirCoefficient, weirHeadFeet, weirLengthFeet],
+  );
+  const orificeResult = useMemo(
+    () =>
+      calculateOrificeFlow({
+        orificeDiameterInches,
+        headFeet: orificeHeadFeet,
+        dischargeCoefficient: orificeDischargeCoefficient,
+      }),
+    [orificeDiameterInches, orificeDischargeCoefficient, orificeHeadFeet],
   );
 
   const chart = useMemo(() => {
@@ -150,6 +188,77 @@ export default function WaterFlowTool() {
       };
     }
 
+    if (isReynolds) {
+      const points = d3.range(0.5, 10.1, 0.25).map((velocity) => ({
+        xValue: velocity,
+        yValue: calculateReynoldsNumber({
+          velocityFeetPerSecond: velocity,
+          diameterInches,
+          kinematicViscositySquareFeetPerSecond,
+        }).reynoldsNumber,
+      }));
+
+      return {
+        title: `Reynolds number at ${formatNumber(diameterInches, 1)} in`,
+        xDomain: [0, 10] as [number, number],
+        yMax: d3.max(points, (point) => point.yValue) ?? 1,
+        xAxisLabel: 'Velocity',
+        yAxisLabel: 'Reynolds number',
+        currentX: velocityFeetPerSecond,
+        currentY: reynoldsResult.reynoldsNumber,
+        xTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 1)} ft/s`,
+        yTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))}`,
+        points,
+      };
+    }
+
+    if (isDetentionTime) {
+      const points = d3.range(100, 3001, 100).map((flow) => ({
+        xValue: flow,
+        yValue: calculateDetentionTime({
+          volumeGallons: detentionVolumeGallons,
+          flowGallonsPerMinute: flow,
+        }).detentionTimeHours,
+      }));
+
+      return {
+        title: `Detention time for ${formatNumber(detentionVolumeGallons, 0)} gal`,
+        xDomain: [0, 3000] as [number, number],
+        yMax: d3.max(points, (point) => point.yValue) ?? 1,
+        xAxisLabel: 'Flow rate',
+        yAxisLabel: 'Detention time, hr',
+        currentX: detentionFlowGallonsPerMinute,
+        currentY: detentionTimeResult.detentionTimeHours,
+        xTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))} gpm`,
+        yTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 1)} hr`,
+        points,
+      };
+    }
+
+    if (isWeirOrifice) {
+      const points = d3.range(0.1, 5.05, 0.1).map((head) => ({
+        xValue: head,
+        yValue: calculateWeirFlow({
+          weirLengthFeet,
+          headFeet: head,
+          weirCoefficient,
+        }).flowGallonsPerMinute,
+      }));
+
+      return {
+        title: `Rectangular weir flow at ${formatNumber(weirLengthFeet, 1)} ft crest`,
+        xDomain: [0, 5] as [number, number],
+        yMax: d3.max(points, (point) => point.yValue) ?? 1,
+        xAxisLabel: 'Head',
+        yAxisLabel: 'Flow, gpm',
+        currentX: weirHeadFeet,
+        currentY: weirResult.flowGallonsPerMinute,
+        xTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 1)} ft`,
+        yTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))} gpm`,
+        points,
+      };
+    }
+
     const points = d3.range(1, 25, 0.5).map((diameter) => ({
       xValue: diameter,
       yValue: calculateContinuityFlow({ diameterInches: diameter, velocityFeetPerSecond }).flowGallonsPerMinute,
@@ -167,7 +276,39 @@ export default function WaterFlowTool() {
       yTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))}`,
       points,
     };
-  }, [bernoulliResult.downstreamTotalHeadFeet, continuityResult.flowGallonsPerMinute, darcyFrictionFactor, darcyWeisbachResult.headLossFeet, diameterInches, downstreamElevationFeet, downstreamPressurePsi, downstreamVelocityFeetPerSecond, flowGallonsPerMinute, hazenWilliamsC, hazenWilliamsResult.headLossFeet, isBernoulli, isDarcyWeisbach, isHazenWilliams, pipeLengthFeet, upstreamElevationFeet, upstreamPressurePsi, upstreamVelocityFeetPerSecond, velocityFeetPerSecond]);
+  }, [
+    bernoulliResult.downstreamTotalHeadFeet,
+    continuityResult.flowGallonsPerMinute,
+    darcyFrictionFactor,
+    darcyWeisbachResult.headLossFeet,
+    detentionFlowGallonsPerMinute,
+    detentionTimeResult.detentionTimeHours,
+    detentionVolumeGallons,
+    diameterInches,
+    downstreamElevationFeet,
+    downstreamPressurePsi,
+    downstreamVelocityFeetPerSecond,
+    flowGallonsPerMinute,
+    hazenWilliamsC,
+    hazenWilliamsResult.headLossFeet,
+    isBernoulli,
+    isDarcyWeisbach,
+    isDetentionTime,
+    isHazenWilliams,
+    isReynolds,
+    isWeirOrifice,
+    kinematicViscositySquareFeetPerSecond,
+    pipeLengthFeet,
+    reynoldsResult.reynoldsNumber,
+    upstreamElevationFeet,
+    upstreamPressurePsi,
+    upstreamVelocityFeetPerSecond,
+    velocityFeetPerSecond,
+    weirCoefficient,
+    weirHeadFeet,
+    weirLengthFeet,
+    weirResult.flowGallonsPerMinute,
+  ]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -271,21 +412,39 @@ export default function WaterFlowTool() {
     ? 'Bernoulli total-head relationship'
     : isHazenWilliams || isDarcyWeisbach
       ? 'Velocity/flow-to-head-loss relationship'
-      : 'Diameter-to-flow relationship';
+      : isReynolds
+        ? 'Flow-regime relationship'
+        : isDetentionTime
+          ? 'Flow-to-detention-time relationship'
+          : isWeirOrifice
+            ? 'Head-to-discharge relationship'
+            : 'Diameter-to-flow relationship';
   const chartDescription = isHazenWilliams
     ? 'The curve shows why head loss climbs quickly as flow increases: Hazen-Williams raises flow to the 1.85 power, so higher demand produces disproportionate friction loss.'
     : isDarcyWeisbach
       ? 'The curve shows why higher velocity increases friction loss sharply: Darcy-Weisbach uses velocity squared inside the velocity-head term.'
       : isBernoulli
         ? 'The curve shows how changing downstream velocity shifts velocity head and therefore total energy head at the downstream point.'
-        : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.';
+        : isReynolds
+          ? 'The curve shows how Reynolds number rises linearly with velocity for a fixed pipe diameter and viscosity, crossing regime thresholds as inertial forces grow.'
+          : isDetentionTime
+            ? 'The curve shows the inverse relationship between flow and detention time: higher flow shortens theoretical contact time in the same tank volume.'
+            : isWeirOrifice
+              ? 'The curve shows how rectangular weir flow accelerates as head over the crest increases; the raw numbers also show the circular-orifice estimate for comparison.'
+              : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.';
   const chartAriaLabel = isHazenWilliams
     ? 'Line chart showing head loss increasing as flow increases'
     : isDarcyWeisbach
       ? 'Line chart showing head loss increasing as velocity increases'
       : isBernoulli
         ? 'Line chart showing downstream total head changing as downstream velocity changes'
-        : 'Line chart showing flow increasing as pipe diameter increases';
+        : isReynolds
+          ? 'Line chart showing Reynolds number increasing as velocity increases'
+          : isDetentionTime
+            ? 'Line chart showing detention time decreasing as flow increases'
+            : isWeirOrifice
+              ? 'Line chart showing rectangular weir flow increasing as head increases'
+              : 'Line chart showing flow increasing as pipe diameter increases';
 
   return (
     <section className="water-tool-section">
@@ -325,7 +484,7 @@ export default function WaterFlowTool() {
             <p className="status">EXAM USE: {equation.examUse}</p>
           </div>
 
-          {!isBernoulli ? (
+          {usesPipeDiameter ? (
             <>
               <label htmlFor="diameter-input">Pipe diameter: {formatNumber(diameterInches, 1)} in</label>
               <input
@@ -416,6 +575,45 @@ export default function WaterFlowTool() {
               <label htmlFor="downstream-velocity-input">Downstream velocity: {formatNumber(downstreamVelocityFeetPerSecond, 1)} ft/s</label>
               <input id="downstream-velocity-input" type="range" min="0.5" max="10" step="0.1" value={downstreamVelocityFeetPerSecond} onChange={(event) => setDownstreamVelocityFeetPerSecond(Number(event.target.value))} />
               <input aria-label="Downstream velocity in feet per second" type="number" min="0.5" max="10" step="0.1" value={downstreamVelocityFeetPerSecond} onChange={(event) => setDownstreamVelocityFeetPerSecond(Number(event.target.value))} />
+            </>
+          ) : isReynolds ? (
+            <>
+              <label htmlFor="velocity-input">Velocity: {formatNumber(velocityFeetPerSecond, 1)} ft/s</label>
+              <input id="velocity-input" type="range" min="0.5" max="10" step="0.1" value={velocityFeetPerSecond} onChange={(event) => setVelocityFeetPerSecond(Number(event.target.value))} />
+              <input aria-label="Velocity in feet per second" type="number" min="0.5" max="10" step="0.1" value={velocityFeetPerSecond} onChange={(event) => setVelocityFeetPerSecond(Number(event.target.value))} />
+              <label htmlFor="viscosity-input">Kinematic viscosity: {kinematicViscositySquareFeetPerSecond.toExponential(2)} ft²/s</label>
+              <input id="viscosity-input" type="range" min="0.000008" max="0.00002" step="0.000001" value={kinematicViscositySquareFeetPerSecond} onChange={(event) => setKinematicViscositySquareFeetPerSecond(Number(event.target.value))} />
+              <input aria-label="Kinematic viscosity in square feet per second" type="number" min="0.000008" max="0.00002" step="0.000001" value={kinematicViscositySquareFeetPerSecond} onChange={(event) => setKinematicViscositySquareFeetPerSecond(Number(event.target.value))} />
+            </>
+          ) : isDetentionTime ? (
+            <>
+              <label htmlFor="detention-volume-input">Volume: {formatNumber(detentionVolumeGallons, 0)} gal</label>
+              <input id="detention-volume-input" type="range" min="10000" max="2000000" step="10000" value={detentionVolumeGallons} onChange={(event) => setDetentionVolumeGallons(Number(event.target.value))} />
+              <input aria-label="Detention volume in gallons" type="number" min="10000" max="2000000" step="10000" value={detentionVolumeGallons} onChange={(event) => setDetentionVolumeGallons(Number(event.target.value))} />
+              <label htmlFor="detention-flow-input">Flow: {formatNumber(detentionFlowGallonsPerMinute, 0)} gpm</label>
+              <input id="detention-flow-input" type="range" min="100" max="3000" step="25" value={detentionFlowGallonsPerMinute} onChange={(event) => setDetentionFlowGallonsPerMinute(Number(event.target.value))} />
+              <input aria-label="Detention flow in gallons per minute" type="number" min="100" max="3000" step="25" value={detentionFlowGallonsPerMinute} onChange={(event) => setDetentionFlowGallonsPerMinute(Number(event.target.value))} />
+            </>
+          ) : isWeirOrifice ? (
+            <>
+              <label htmlFor="weir-length-input">Weir crest length: {formatNumber(weirLengthFeet, 1)} ft</label>
+              <input id="weir-length-input" type="range" min="0.5" max="10" step="0.1" value={weirLengthFeet} onChange={(event) => setWeirLengthFeet(Number(event.target.value))} />
+              <input aria-label="Weir crest length in feet" type="number" min="0.5" max="10" step="0.1" value={weirLengthFeet} onChange={(event) => setWeirLengthFeet(Number(event.target.value))} />
+              <label htmlFor="weir-head-input">Weir head: {formatNumber(weirHeadFeet, 2)} ft</label>
+              <input id="weir-head-input" type="range" min="0.1" max="5" step="0.05" value={weirHeadFeet} onChange={(event) => setWeirHeadFeet(Number(event.target.value))} />
+              <input aria-label="Weir head in feet" type="number" min="0.1" max="5" step="0.05" value={weirHeadFeet} onChange={(event) => setWeirHeadFeet(Number(event.target.value))} />
+              <label htmlFor="weir-coefficient-input">Weir coefficient: {formatNumber(weirCoefficient, 2)}</label>
+              <input id="weir-coefficient-input" type="range" min="2.8" max="3.5" step="0.01" value={weirCoefficient} onChange={(event) => setWeirCoefficient(Number(event.target.value))} />
+              <input aria-label="Weir coefficient" type="number" min="2.8" max="3.5" step="0.01" value={weirCoefficient} onChange={(event) => setWeirCoefficient(Number(event.target.value))} />
+              <label htmlFor="orifice-diameter-input">Orifice diameter: {formatNumber(orificeDiameterInches, 1)} in</label>
+              <input id="orifice-diameter-input" type="range" min="1" max="24" step="0.5" value={orificeDiameterInches} onChange={(event) => setOrificeDiameterInches(Number(event.target.value))} />
+              <input aria-label="Orifice diameter in inches" type="number" min="1" max="24" step="0.5" value={orificeDiameterInches} onChange={(event) => setOrificeDiameterInches(Number(event.target.value))} />
+              <label htmlFor="orifice-head-input">Orifice head: {formatNumber(orificeHeadFeet, 2)} ft</label>
+              <input id="orifice-head-input" type="range" min="0.1" max="50" step="0.1" value={orificeHeadFeet} onChange={(event) => setOrificeHeadFeet(Number(event.target.value))} />
+              <input aria-label="Orifice head in feet" type="number" min="0.1" max="50" step="0.1" value={orificeHeadFeet} onChange={(event) => setOrificeHeadFeet(Number(event.target.value))} />
+              <label htmlFor="orifice-coefficient-input">Orifice Cd: {formatNumber(orificeDischargeCoefficient, 2)}</label>
+              <input id="orifice-coefficient-input" type="range" min="0.4" max="0.9" step="0.01" value={orificeDischargeCoefficient} onChange={(event) => setOrificeDischargeCoefficient(Number(event.target.value))} />
+              <input aria-label="Orifice discharge coefficient" type="number" min="0.4" max="0.9" step="0.01" value={orificeDischargeCoefficient} onChange={(event) => setOrificeDischargeCoefficient(Number(event.target.value))} />
             </>
           ) : (
             <>
@@ -524,6 +722,32 @@ export default function WaterFlowTool() {
               <div><dt>Energy difference</dt><dd>{formatNumber(bernoulliResult.energyDifferenceFeet, 3)} ft</dd></div>
               <div><dt>Energy difference</dt><dd>{formatNumber(bernoulliResult.energyDifferencePsi, 3)} psi</dd></div>
             </dl>
+          ) : isReynolds ? (
+            <dl className="metric-list">
+              <div><dt>Velocity</dt><dd>{formatNumber(reynoldsResult.velocityFeetPerSecond, 1)} ft/s</dd></div>
+              <div><dt>Diameter</dt><dd>{formatNumber(reynoldsResult.diameterFeet, 3)} ft</dd></div>
+              <div><dt>Kinematic viscosity</dt><dd>{reynoldsResult.kinematicViscositySquareFeetPerSecond.toExponential(2)} ft²/s</dd></div>
+              <div><dt>Reynolds number</dt><dd>{formatNumber(reynoldsResult.reynoldsNumber, 0)}</dd></div>
+              <div><dt>Flow regime</dt><dd>{reynoldsResult.flowRegime}</dd></div>
+            </dl>
+          ) : isDetentionTime ? (
+            <dl className="metric-list">
+              <div><dt>Volume</dt><dd>{formatNumber(detentionTimeResult.volumeGallons, 0)} gal</dd></div>
+              <div><dt>Flow</dt><dd>{formatNumber(detentionTimeResult.flowGallonsPerMinute, 0)} gpm</dd></div>
+              <div><dt>Detention time</dt><dd>{formatNumber(detentionTimeResult.detentionTimeMinutes, 1)} min</dd></div>
+              <div><dt>Detention time</dt><dd>{formatNumber(detentionTimeResult.detentionTimeHours, 2)} hr</dd></div>
+              <div><dt>Detention time</dt><dd>{formatNumber(detentionTimeResult.detentionTimeDays, 3)} days</dd></div>
+            </dl>
+          ) : isWeirOrifice ? (
+            <dl className="metric-list">
+              <div><dt>Weir flow</dt><dd>{formatNumber(weirResult.flowCubicFeetPerSecond, 3)} cfs</dd></div>
+              <div><dt>Weir flow</dt><dd>{formatNumber(weirResult.flowGallonsPerMinute, 1)} gpm</dd></div>
+              <div><dt>Weir flow</dt><dd>{formatNumber(weirResult.flowMillionGallonsPerDay, 3)} MGD</dd></div>
+              <div><dt>Orifice area</dt><dd>{formatNumber(orificeResult.areaSquareFeet, 3)} ft²</dd></div>
+              <div><dt>Orifice flow</dt><dd>{formatNumber(orificeResult.flowCubicFeetPerSecond, 3)} cfs</dd></div>
+              <div><dt>Orifice flow</dt><dd>{formatNumber(orificeResult.flowGallonsPerMinute, 1)} gpm</dd></div>
+              <div><dt>Orifice flow</dt><dd>{formatNumber(orificeResult.flowMillionGallonsPerDay, 3)} MGD</dd></div>
+            </dl>
           ) : (
             <dl className="metric-list">
               <div><dt>Diameter</dt><dd>{formatNumber(continuityResult.diameterFeet, 3)} ft</dd></div>
@@ -534,7 +758,7 @@ export default function WaterFlowTool() {
             </dl>
           )}
 
-          {!isBernoulli ? (
+          {usesPipeDiameter ? (
             <div className="pipe-visual" aria-label="Pipe cross-section visualization">
               <div className="pipe-circle" style={{ '--pipe-size': `${pipeVisualSizePercent}%` } as React.CSSProperties}>
                 <span>{formatNumber(diameterInches, 1)} in</span>
@@ -550,13 +774,15 @@ export default function WaterFlowTool() {
         <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={chartAriaLabel} />
       </div>
 
-      <div className="water-panel future-equations">
-        <h2>Next equations to add</h2>
-        <p>These are common water-operator fluid-dynamics relationships to expand into the selector after the current tools work well.</p>
-        <ul>
-          {futureFluidDynamicsEquations.map((item) => <li key={item}>{item}</li>)}
-        </ul>
-      </div>
+      {futureFluidDynamicsEquations.length > 0 ? (
+        <div className="water-panel future-equations">
+          <h2>Next equations to add</h2>
+          <p>These are common water-operator fluid-dynamics relationships to expand into the selector after the current tools work well.</p>
+          <ul>
+            {futureFluidDynamicsEquations.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
