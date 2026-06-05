@@ -60,6 +60,57 @@ export type BernoulliEnergyResult = BernoulliEnergyInputs & {
   energyDifferencePsi: number;
 };
 
+export type ReynoldsNumberInputs = {
+  velocityFeetPerSecond: number;
+  diameterInches: number;
+  kinematicViscositySquareFeetPerSecond: number;
+};
+
+export type ReynoldsFlowRegime = 'laminar' | 'transitional' | 'turbulent';
+
+export type ReynoldsNumberResult = ReynoldsNumberInputs & {
+  diameterFeet: number;
+  reynoldsNumber: number;
+  flowRegime: ReynoldsFlowRegime;
+};
+
+export type DetentionTimeInputs = {
+  volumeGallons: number;
+  flowGallonsPerMinute: number;
+};
+
+export type DetentionTimeResult = DetentionTimeInputs & {
+  detentionTimeMinutes: number;
+  detentionTimeHours: number;
+  detentionTimeDays: number;
+};
+
+export type WeirFlowInputs = {
+  weirLengthFeet: number;
+  headFeet: number;
+  weirCoefficient: number;
+};
+
+export type WeirFlowResult = WeirFlowInputs & {
+  flowCubicFeetPerSecond: number;
+  flowGallonsPerMinute: number;
+  flowMillionGallonsPerDay: number;
+};
+
+export type OrificeFlowInputs = {
+  orificeDiameterInches: number;
+  headFeet: number;
+  dischargeCoefficient: number;
+};
+
+export type OrificeFlowResult = OrificeFlowInputs & {
+  diameterFeet: number;
+  areaSquareFeet: number;
+  flowCubicFeetPerSecond: number;
+  flowGallonsPerMinute: number;
+  flowMillionGallonsPerDay: number;
+};
+
 export type EquationOption = {
   id: string;
   name: string;
@@ -104,6 +155,10 @@ const VELOCITY_HEAD_DENOMINATOR = 2;
 const SQUARE_INCHES_PER_SQUARE_FOOT = 144;
 const WATER_UNIT_WEIGHT_POUNDS_PER_CUBIC_FOOT = 62.4;
 const FEET_OF_WATER_PER_PSI = SQUARE_INCHES_PER_SQUARE_FOOT / WATER_UNIT_WEIGHT_POUNDS_PER_CUBIC_FOOT;
+const HOURS_PER_DAY = 24;
+const LAMINAR_REYNOLDS_LIMIT = 2000;
+const TURBULENT_REYNOLDS_LIMIT = 4000;
+const RECTANGULAR_WEIR_EXPONENT = 1.5;
 
 // Display-only bounds for the pipe cross-section graphic. The log scale keeps
 // small pipes visible while preventing large-pipe examples from overflowing.
@@ -173,13 +228,58 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
       'A positive upstream-minus-downstream energy difference means available head was consumed by losses or delivered to downstream conditions.',
     ],
   },
+  {
+    id: 'reynolds-number',
+    name: 'Reynolds number',
+    formula: 'Re = vD/ν',
+    description:
+      'Classifies pipe flow by comparing inertial forces from velocity and pipe size against viscous forces from the water.',
+    examUse:
+      'Use it when a problem asks whether flow is laminar, transitional, or turbulent. In this US customary form: v is ft/s, D is feet, ν is ft²/s, and Re has no units.',
+    coefficientOrigin:
+      'How the numbers were discovered: Osborne Reynolds injected dye into flowing water and observed when the streak stayed orderly or broke into mixing eddies. Repeated experiments showed that the dimensionless ratio vD/ν predicts the regime across pipe sizes and fluids.',
+    coefficientNotes: [
+      'Re below about 2,000 is typically laminar: viscous forces keep the flow orderly.',
+      'Re from about 2,000 to 4,000 is transitional: either laminar or turbulent behavior can appear depending on disturbances and roughness.',
+      'Re above about 4,000 is typically turbulent: inertial forces dominate and mixing eddies form.',
+      'ν is kinematic viscosity. Around room-temperature water is commonly near 0.000011 ft²/s, but temperature changes viscosity.',
+    ],
+  },
+  {
+    id: 'detention-time',
+    name: 'Detention time',
+    formula: 't = V/Q',
+    description:
+      'Calculates the theoretical time water spends in a basin, tank, or clearwell by dividing storage volume by flow rate.',
+    examUse:
+      'Use it when a treatment-process problem gives volume and flow and asks for contact time, residence time, or detention time. Keep units consistent: gallons divided by gallons per minute gives minutes.',
+    coefficientOrigin:
+      'How the relationship was derived: detention time is a direct mass-balance idea. If Q gallons leave each minute and the tank holds V gallons, V/Q minutes are needed to exchange one tank volume under ideal plug-flow assumptions.',
+    coefficientNotes: [
+      'There is no empirical coefficient in t = V/Q; the apparent constants are unit conversions from minutes to hours or days.',
+      'Real tanks can short-circuit or mix, so actual effective contact time can be lower than theoretical detention time.',
+    ],
+  },
+  {
+    id: 'weir-orifice-flow',
+    name: 'Weir/orifice flow',
+    formula: 'Weir: Q = CwLH^1.5; orifice: Q = CdA√(2gH)',
+    description:
+      'Estimates discharge over a sharp-crested rectangular weir or through a submerged circular orifice from measured head.',
+    examUse:
+      'Use a weir equation for open-channel flow over a crest and an orifice equation for flow through a restriction or opening. These are common flow-measurement relationships in treatment and distribution systems.',
+    coefficientOrigin:
+      'How the numbers were discovered: Torricelli connected falling water head to exit velocity using energy conservation, giving √(2gH). Weir and orifice coefficients were then measured experimentally to account for contraction, edge shape, turbulence, and non-ideal approach flow.',
+    coefficientNotes: [
+      '3.33 is a common US-customary coefficient for sharp-crested rectangular weirs with Q in cfs, crest length L in feet, and head H in feet.',
+      'The 1.5 exponent appears because velocity grows with √H while the flowing nappe depth contributes another H.',
+      'Cd is the orifice discharge coefficient. A sharp-edged circular orifice is often near 0.6–0.62, but the exact value depends on geometry.',
+      '32.174 ft/s² is standard gravity inside the orifice velocity term √(2gH).',
+    ],
+  },
 ];
 
-export const futureFluidDynamicsEquations = [
-  'Reynolds number: laminar/transitional/turbulent flow classification',
-  'Detention time: volume divided by flow for basins, tanks, and clearwells',
-  'Weir/orifice flow: estimating open-channel or restriction discharge',
-] as const;
+export const futureFluidDynamicsEquations: string[] = [];
 
 export function calculateContinuityFlow(inputs: ContinuityInputs): ContinuityResult {
   const diameterFeet = inputs.diameterInches / INCHES_PER_FOOT;
@@ -257,6 +357,72 @@ export function calculateBernoulliEnergy(inputs: BernoulliEnergyInputs): Bernoul
     downstreamTotalHeadFeet,
     energyDifferenceFeet,
     energyDifferencePsi,
+  };
+}
+
+export function calculateReynoldsNumber(inputs: ReynoldsNumberInputs): ReynoldsNumberResult {
+  const diameterFeet = inputs.diameterInches / INCHES_PER_FOOT;
+  const reynoldsNumber =
+    (inputs.velocityFeetPerSecond * diameterFeet) / inputs.kinematicViscositySquareFeetPerSecond;
+  const flowRegime: ReynoldsFlowRegime = reynoldsNumber < LAMINAR_REYNOLDS_LIMIT
+    ? 'laminar'
+    : reynoldsNumber < TURBULENT_REYNOLDS_LIMIT
+      ? 'transitional'
+      : 'turbulent';
+
+  return {
+    ...inputs,
+    diameterFeet,
+    reynoldsNumber,
+    flowRegime,
+  };
+}
+
+export function calculateDetentionTime(inputs: DetentionTimeInputs): DetentionTimeResult {
+  const detentionTimeMinutes = inputs.volumeGallons / inputs.flowGallonsPerMinute;
+  const detentionTimeHours = detentionTimeMinutes / SECONDS_PER_MINUTE;
+  const detentionTimeDays = detentionTimeHours / HOURS_PER_DAY;
+
+  return {
+    ...inputs,
+    detentionTimeMinutes,
+    detentionTimeHours,
+    detentionTimeDays,
+  };
+}
+
+export function calculateWeirFlow(inputs: WeirFlowInputs): WeirFlowResult {
+  const flowCubicFeetPerSecond =
+    inputs.weirCoefficient * inputs.weirLengthFeet * inputs.headFeet ** RECTANGULAR_WEIR_EXPONENT;
+  const flowGallonsPerMinute = flowCubicFeetPerSecond * GPM_PER_CFS;
+  const flowMillionGallonsPerDay = flowCubicFeetPerSecond * MGD_PER_CFS;
+
+  return {
+    ...inputs,
+    flowCubicFeetPerSecond,
+    flowGallonsPerMinute,
+    flowMillionGallonsPerDay,
+  };
+}
+
+export function calculateOrificeFlow(inputs: OrificeFlowInputs): OrificeFlowResult {
+  const diameterFeet = inputs.orificeDiameterInches / INCHES_PER_FOOT;
+  const radiusFeet = diameterFeet / RADIUS_FROM_DIAMETER;
+  const areaSquareFeet = Math.PI * radiusFeet ** 2;
+  const flowCubicFeetPerSecond =
+    inputs.dischargeCoefficient * areaSquareFeet * Math.sqrt(
+      VELOCITY_HEAD_DENOMINATOR * STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED * inputs.headFeet,
+    );
+  const flowGallonsPerMinute = flowCubicFeetPerSecond * GPM_PER_CFS;
+  const flowMillionGallonsPerDay = flowCubicFeetPerSecond * MGD_PER_CFS;
+
+  return {
+    ...inputs,
+    diameterFeet,
+    areaSquareFeet,
+    flowCubicFeetPerSecond,
+    flowGallonsPerMinute,
+    flowMillionGallonsPerDay,
   };
 }
 
