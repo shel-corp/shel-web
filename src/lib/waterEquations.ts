@@ -60,6 +60,17 @@ export function calculateContinuityFlow(inputs: ContinuityInputs): ContinuityRes
   };
 }
 
+export function calculatePipeVisualSizePercent(diameterInches: number): number {
+  const minDiameter = 1;
+  const maxDiameter = 24;
+  const minSizePercent = 14;
+  const maxSizePercent = 88;
+  const clampedDiameter = Math.min(maxDiameter, Math.max(minDiameter, diameterInches));
+  const normalizedLogScale = Math.log(clampedDiameter / minDiameter + 1) / Math.log(maxDiameter / minDiameter + 1);
+
+  return minSizePercent + normalizedLogScale * (maxSizePercent - minSizePercent);
+}
+
 export function formatNumber(value: number, digits = 2): string {
   return new Intl.NumberFormat('en-US', {
     maximumFractionDigits: digits,
