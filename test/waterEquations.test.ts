@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateContinuityFlow, fluidDynamicsEquationOptions } from "../src/lib/waterEquations";
+import { calculateContinuityFlow, calculatePipeVisualSizePercent, fluidDynamicsEquationOptions } from "../src/lib/waterEquations";
 
 test("continuity equation converts diameter and velocity into cfs, gpm, and MGD", () => {
   const result = calculateContinuityFlow({ diameterInches: 12, velocityFeetPerSecond: 2 });
@@ -17,4 +17,18 @@ test("continuity equation converts diameter and velocity into cfs, gpm, and MGD"
 test("equation selector starts with the continuity flow relationship", () => {
   assert.deepEqual(fluidDynamicsEquationOptions.map((equation) => equation.id), ["continuity-flow"]);
   assert.match(fluidDynamicsEquationOptions[0].formula, /Q = A/);
+});
+
+test("pipe visual uses a bounded logarithmic scale", () => {
+  const oneInch = calculatePipeVisualSizePercent(1);
+  const twelveInch = calculatePipeVisualSizePercent(12);
+  const twentyFourInch = calculatePipeVisualSizePercent(24);
+
+  assert.equal(oneInch, calculatePipeVisualSizePercent(0));
+  assert.equal(twentyFourInch, calculatePipeVisualSizePercent(99));
+  assert.ok(oneInch >= 14);
+  assert.ok(twentyFourInch <= 88);
+  assert.ok(oneInch < twelveInch);
+  assert.ok(twelveInch < twentyFourInch);
+  assert.ok(twelveInch > 51, "log scale should make mid-range diameters legible");
 });

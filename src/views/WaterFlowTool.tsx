@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import {
   calculateContinuityFlow,
+  calculatePipeVisualSizePercent,
   fluidDynamicsEquationOptions,
   formatNumber,
   futureFluidDynamicsEquations,
@@ -126,7 +127,7 @@ export default function WaterFlowTool() {
       .text('Gallons per minute');
   }, [diameterInches, velocityFeetPerSecond, result.flowGallonsPerMinute]);
 
-  const pipeFillPercent = Math.min(100, Math.max(8, (diameterInches / 24) * 100));
+  const pipeVisualSizePercent = calculatePipeVisualSizePercent(diameterInches);
 
   return (
     <section className="water-tool-section">
@@ -204,7 +205,7 @@ export default function WaterFlowTool() {
           </dl>
 
           <div className="pipe-visual" aria-label="Pipe cross-section visualization">
-            <div className="pipe-circle" style={{ width: `${pipeFillPercent}%`, paddingBottom: `${pipeFillPercent}%` }}>
+            <div className="pipe-circle" style={{ '--pipe-size': `${pipeVisualSizePercent}%` } as React.CSSProperties}>
               <span>{formatNumber(diameterInches, 1)} in</span>
             </div>
           </div>
