@@ -203,6 +203,12 @@ export default function WaterFlowTool() {
           <div className="equation-card">
             <strong>{equation.formula}</strong>
             <p>{equation.description}</p>
+            {equation.coefficientOrigin ? (
+              <div className="coefficient-notes">
+                <p className="status">HOW THESE NUMBERS WERE DISCOVERED</p>
+                <p>{equation.coefficientOrigin}</p>
+              </div>
+            ) : null}
             {equation.coefficientNotes ? (
               <div className="coefficient-notes">
                 <p className="status">COEFFICIENT NOTES</p>
