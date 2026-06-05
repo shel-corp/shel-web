@@ -323,6 +323,16 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   font-family: "IBM Plex Mono", monospace;
   margin-bottom: 8px;
 }
+.coefficient-notes {
+  border-top: 1px solid var(--sc-gray-1);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.coefficient-notes ul {
+  margin: 6px 0 12px 18px;
+  padding: 0;
+}
+.coefficient-notes li { margin-bottom: 6px; }
 .metric-list {
   display: grid;
   gap: 12px;
