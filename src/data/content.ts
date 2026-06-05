@@ -2,6 +2,7 @@ export type Product = {
   name: string;
   description: string;
   department: string;
+  href?: string;
 };
 
 export type Department = readonly [name: string, email: string];
@@ -27,6 +28,12 @@ export const products: Product[] = [
     name: 'Workflow Metrics',
     description: 'Surfaces performance characteristics across development workflows.',
     department: 'Workflow Compliance',
+  },
+  {
+    name: 'Water Flow Study Tool',
+    description: 'Interactive water-operator exam practice for fluid-dynamics equations, starting with continuity flow rate.',
+    department: 'Operator Relations',
+    href: '/products/water-flow',
   },
 ];
 
