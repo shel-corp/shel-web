@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  calculateBernoulliEnergy,
   calculateContinuityFlow,
   calculateDarcyWeisbachHeadLoss,
   calculateHazenWilliamsHeadLoss,
@@ -21,8 +22,21 @@ test("continuity equation converts diameter and velocity into cfs, gpm, and MGD"
 });
 
 test("equation selector starts with the continuity flow relationship", () => {
-  assert.deepEqual(fluidDynamicsEquationOptions.map((equation) => equation.id), ["continuity-flow", "hazen-williams-head-loss", "darcy-weisbach-head-loss"]);
+  assert.deepEqual(fluidDynamicsEquationOptions.map((equation) => equation.id), [
+    "continuity-flow",
+    "hazen-williams-head-loss",
+    "darcy-weisbach-head-loss",
+    "bernoulli-energy",
+  ]);
   assert.match(fluidDynamicsEquationOptions[0].formula, /Q = A/);
+});
+
+test("Bernoulli equation metadata explains energy heads and constants", () => {
+  const bernoulli = fluidDynamicsEquationOptions.find((equation) => equation.id === "bernoulli-energy");
+
+  assert.match(bernoulli?.formula ?? "", /z \+ P\/γ \+ v²\/\(2g\)/);
+  assert.ok(bernoulli?.coefficientNotes?.some((note) => note.includes("2.31 ft of water")));
+  assert.ok(bernoulli?.coefficientNotes?.some((note) => note.includes("32.174 ft/s²")));
 });
 
 test("Darcy-Weisbach equation metadata explains constants and when to use it", () => {
@@ -82,4 +96,24 @@ test("Darcy-Weisbach equation calculates head loss from velocity, diameter, fric
   assert.ok(Math.abs(result.headLossFeet - 11.6554) < 0.001);
   assert.ok(Math.abs(result.headLossFeetPer100Feet - 1.1655) < 0.001);
   assert.ok(Math.abs(result.pressureLossPsi - 5.0468) < 0.001);
+});
+
+test("Bernoulli equation calculates elevation, pressure, velocity, and total energy heads at two points", () => {
+  const result = calculateBernoulliEnergy({
+    upstreamElevationFeet: 10,
+    upstreamPressurePsi: 50,
+    upstreamVelocityFeetPerSecond: 4,
+    downstreamElevationFeet: 12,
+    downstreamPressurePsi: 45,
+    downstreamVelocityFeetPerSecond: 6,
+  });
+
+  assert.ok(Math.abs(result.upstreamPressureHeadFeet - 115.3846) < 0.001);
+  assert.ok(Math.abs(result.upstreamVelocityHeadFeet - 0.2486) < 0.001);
+  assert.ok(Math.abs(result.upstreamTotalHeadFeet - 125.6333) < 0.001);
+  assert.ok(Math.abs(result.downstreamPressureHeadFeet - 103.8462) < 0.001);
+  assert.ok(Math.abs(result.downstreamVelocityHeadFeet - 0.5595) < 0.001);
+  assert.ok(Math.abs(result.downstreamTotalHeadFeet - 116.4056) < 0.001);
+  assert.ok(Math.abs(result.energyDifferenceFeet - 9.2277) < 0.001);
+  assert.ok(Math.abs(result.energyDifferencePsi - 3.9956) < 0.001);
 });
