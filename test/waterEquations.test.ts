@@ -19,6 +19,14 @@ test("equation selector starts with the continuity flow relationship", () => {
   assert.match(fluidDynamicsEquationOptions[0].formula, /Q = A/);
 });
 
+test("Hazen-Williams explains where empirical constants came from", () => {
+  const hazenWilliams = fluidDynamicsEquationOptions.find((equation) => equation.id === "hazen-williams-head-loss");
+
+  assert.ok(hazenWilliams?.coefficientOrigin?.includes("measured pressure loss"));
+  assert.ok(hazenWilliams?.coefficientOrigin?.includes("power-law curve"));
+  assert.ok(hazenWilliams?.coefficientOrigin?.includes("curve-fit slopes"));
+});
+
 test("pipe visual uses a bounded logarithmic scale", () => {
   const oneInch = calculatePipeVisualSizePercent(1);
   const twelveInch = calculatePipeVisualSizePercent(12);

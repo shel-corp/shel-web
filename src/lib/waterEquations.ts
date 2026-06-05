@@ -31,6 +31,7 @@ export type EquationOption = {
   formula: string;
   description: string;
   examUse: string;
+  coefficientOrigin?: string;
   coefficientNotes?: string[];
 };
 
@@ -47,8 +48,10 @@ const MGD_PER_CFS = (GALLONS_PER_CUBIC_FOOT * SECONDS_PER_MINUTE * MINUTES_PER_D
 
 // Hazen-Williams empirical constants for the common US customary form:
 // hₗ(ft) = 4.52 × L(ft) × Q(gpm)^1.85 ÷ (C^1.85 × d(in)^4.87).
-// They are not derived from first principles; they fit observed turbulent water flow
-// in pressurized pipe and bake in the ft/gpm/in unit conversions.
+// Hazen and Williams developed the relationship by fitting measured pressure-loss
+// data from real water mains with a power-law curve. The exponents and coefficient
+// are regression-fit constants for turbulent water flow, not first-principles values.
+// Later unit conversion puts that empirical curve into the ft/gpm/in form below.
 const HAZEN_WILLIAMS_US_COEFFICIENT = 4.52;
 const HAZEN_WILLIAMS_FLOW_EXPONENT = 1.85;
 const HAZEN_WILLIAMS_ROUGHNESS_EXPONENT = 1.85;
@@ -81,6 +84,8 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
       'Estimates friction head loss through pressurized water pipe using flow, pipe diameter, pipe length, and the Hazen-Williams roughness coefficient.',
     examUse:
       'Use it when a water distribution problem asks for friction loss, pressure loss, or the effect of pipe size/material on head loss. In this US customary form: Q is gpm, d is inches, L is feet, and hₗ is feet of water.',
+    coefficientOrigin:
+      'How the numbers were discovered: Hazen and Williams measured pressure loss in working water pipes, compared those losses against flow rate, pipe diameter, pipe length, and pipe condition, then fit a power-law curve to the observations. The 1.85 and 4.87 exponents are the curve-fit slopes that best matched turbulent water-main data; the C factor lets operators adjust the same curve for pipe roughness and age. The 4.52 coefficient is the US-customary version of that empirical curve after choosing Q in gpm, d in inches, L in feet, and hₗ in feet of water.',
     coefficientNotes: [
       '4.52 is the empirical US-customary coefficient; it folds observed water-flow behavior together with the gpm, inch, foot unit choices.',
       '1.85 is the empirical exponent on both flow Q and roughness C. Because Q is raised above 1, head loss increases faster than flow.',
