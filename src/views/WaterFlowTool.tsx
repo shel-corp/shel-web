@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import {
+  calculateBernoulliEnergy,
   calculateContinuityFlow,
   calculateDarcyWeisbachHeadLoss,
   calculateHazenWilliamsHeadLoss,
@@ -27,11 +28,18 @@ export default function WaterFlowTool() {
   const [hazenWilliamsC, setHazenWilliamsC] = useState(120);
   const [darcyFrictionFactor, setDarcyFrictionFactor] = useState(0.02);
   const [pipeLengthFeet, setPipeLengthFeet] = useState(1000);
+  const [upstreamElevationFeet, setUpstreamElevationFeet] = useState(10);
+  const [upstreamPressurePsi, setUpstreamPressurePsi] = useState(50);
+  const [upstreamVelocityFeetPerSecond, setUpstreamVelocityFeetPerSecond] = useState(4);
+  const [downstreamElevationFeet, setDownstreamElevationFeet] = useState(12);
+  const [downstreamPressurePsi, setDownstreamPressurePsi] = useState(45);
+  const [downstreamVelocityFeetPerSecond, setDownstreamVelocityFeetPerSecond] = useState(6);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const equation = fluidDynamicsEquationOptions.find((option) => option.id === equationId) ?? fluidDynamicsEquationOptions[0];
   const isHazenWilliams = equationId === 'hazen-williams-head-loss';
   const isDarcyWeisbach = equationId === 'darcy-weisbach-head-loss';
+  const isBernoulli = equationId === 'bernoulli-energy';
   const continuityResult = useMemo(
     () => calculateContinuityFlow({ diameterInches, velocityFeetPerSecond }),
     [diameterInches, velocityFeetPerSecond],
@@ -43,6 +51,25 @@ export default function WaterFlowTool() {
   const darcyWeisbachResult = useMemo(
     () => calculateDarcyWeisbachHeadLoss({ velocityFeetPerSecond, diameterInches, darcyFrictionFactor, pipeLengthFeet }),
     [darcyFrictionFactor, diameterInches, pipeLengthFeet, velocityFeetPerSecond],
+  );
+  const bernoulliResult = useMemo(
+    () =>
+      calculateBernoulliEnergy({
+        upstreamElevationFeet,
+        upstreamPressurePsi,
+        upstreamVelocityFeetPerSecond,
+        downstreamElevationFeet,
+        downstreamPressurePsi,
+        downstreamVelocityFeetPerSecond,
+      }),
+    [
+      downstreamElevationFeet,
+      downstreamPressurePsi,
+      downstreamVelocityFeetPerSecond,
+      upstreamElevationFeet,
+      upstreamPressurePsi,
+      upstreamVelocityFeetPerSecond,
+    ],
   );
 
   const chart = useMemo(() => {
@@ -96,6 +123,33 @@ export default function WaterFlowTool() {
       };
     }
 
+    if (isBernoulli) {
+      const points = d3.range(0.5, 10.1, 0.25).map((velocity) => ({
+        xValue: velocity,
+        yValue: calculateBernoulliEnergy({
+          upstreamElevationFeet,
+          upstreamPressurePsi,
+          upstreamVelocityFeetPerSecond,
+          downstreamElevationFeet,
+          downstreamPressurePsi,
+          downstreamVelocityFeetPerSecond: velocity,
+        }).downstreamTotalHeadFeet,
+      }));
+
+      return {
+        title: `Downstream total head as velocity changes`,
+        xDomain: [0, 10] as [number, number],
+        yMax: d3.max(points, (point) => point.yValue) ?? 1,
+        xAxisLabel: 'Downstream velocity',
+        yAxisLabel: 'Total head, ft',
+        currentX: downstreamVelocityFeetPerSecond,
+        currentY: bernoulliResult.downstreamTotalHeadFeet,
+        xTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 1)} ft/s`,
+        yTickFormat: (value: d3.NumberValue) => `${formatNumber(Number(value), 0)} ft`,
+        points,
+      };
+    }
+
     const points = d3.range(1, 25, 0.5).map((diameter) => ({
       xValue: diameter,
       yValue: calculateContinuityFlow({ diameterInches: diameter, velocityFeetPerSecond }).flowGallonsPerMinute,
@@ -113,7 +167,7 @@ export default function WaterFlowTool() {
       yTickFormat: (value: d3.NumberValue) => `${d3.format('~s')(Number(value))}`,
       points,
     };
-  }, [continuityResult.flowGallonsPerMinute, darcyFrictionFactor, darcyWeisbachResult.headLossFeet, diameterInches, flowGallonsPerMinute, hazenWilliamsC, hazenWilliamsResult.headLossFeet, isDarcyWeisbach, isHazenWilliams, pipeLengthFeet, velocityFeetPerSecond]);
+  }, [bernoulliResult.downstreamTotalHeadFeet, continuityResult.flowGallonsPerMinute, darcyFrictionFactor, darcyWeisbachResult.headLossFeet, diameterInches, downstreamElevationFeet, downstreamPressurePsi, downstreamVelocityFeetPerSecond, flowGallonsPerMinute, hazenWilliamsC, hazenWilliamsResult.headLossFeet, isBernoulli, isDarcyWeisbach, isHazenWilliams, pipeLengthFeet, upstreamElevationFeet, upstreamPressurePsi, upstreamVelocityFeetPerSecond, velocityFeetPerSecond]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -213,17 +267,25 @@ export default function WaterFlowTool() {
   }, [chart]);
 
   const pipeVisualSizePercent = calculatePipeVisualSizePercent(diameterInches);
-  const chartHeading = isHazenWilliams || isDarcyWeisbach ? 'Velocity/flow-to-head-loss relationship' : 'Diameter-to-flow relationship';
+  const chartHeading = isBernoulli
+    ? 'Bernoulli total-head relationship'
+    : isHazenWilliams || isDarcyWeisbach
+      ? 'Velocity/flow-to-head-loss relationship'
+      : 'Diameter-to-flow relationship';
   const chartDescription = isHazenWilliams
     ? 'The curve shows why head loss climbs quickly as flow increases: Hazen-Williams raises flow to the 1.85 power, so higher demand produces disproportionate friction loss.'
     : isDarcyWeisbach
       ? 'The curve shows why higher velocity increases friction loss sharply: Darcy-Weisbach uses velocity squared inside the velocity-head term.'
-      : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.';
+      : isBernoulli
+        ? 'The curve shows how changing downstream velocity shifts velocity head and therefore total energy head at the downstream point.'
+        : 'The curve shows why diameter dominates flow: area grows with the square of diameter, so doubling the pipe diameter roughly quadruples flow at the same velocity.';
   const chartAriaLabel = isHazenWilliams
     ? 'Line chart showing head loss increasing as flow increases'
     : isDarcyWeisbach
       ? 'Line chart showing head loss increasing as velocity increases'
-      : 'Line chart showing flow increasing as pipe diameter increases';
+      : isBernoulli
+        ? 'Line chart showing downstream total head changing as downstream velocity changes'
+        : 'Line chart showing flow increasing as pipe diameter increases';
 
   return (
     <section className="water-tool-section">
@@ -263,25 +325,29 @@ export default function WaterFlowTool() {
             <p className="status">EXAM USE: {equation.examUse}</p>
           </div>
 
-          <label htmlFor="diameter-input">Pipe diameter: {formatNumber(diameterInches, 1)} in</label>
-          <input
-            id="diameter-input"
-            type="range"
-            min="1"
-            max="24"
-            step="0.5"
-            value={diameterInches}
-            onChange={(event) => setDiameterInches(Number(event.target.value))}
-          />
-          <input
-            aria-label="Pipe diameter in inches"
-            type="number"
-            min="1"
-            max="24"
-            step="0.5"
-            value={diameterInches}
-            onChange={(event) => setDiameterInches(Number(event.target.value))}
-          />
+          {!isBernoulli ? (
+            <>
+              <label htmlFor="diameter-input">Pipe diameter: {formatNumber(diameterInches, 1)} in</label>
+              <input
+                id="diameter-input"
+                type="range"
+                min="1"
+                max="24"
+                step="0.5"
+                value={diameterInches}
+                onChange={(event) => setDiameterInches(Number(event.target.value))}
+              />
+              <input
+                aria-label="Pipe diameter in inches"
+                type="number"
+                min="1"
+                max="24"
+                step="0.5"
+                value={diameterInches}
+                onChange={(event) => setDiameterInches(Number(event.target.value))}
+              />
+            </>
+          ) : null}
 
           {isHazenWilliams ? (
             <>
@@ -324,6 +390,32 @@ export default function WaterFlowTool() {
                 value={hazenWilliamsC}
                 onChange={(event) => setHazenWilliamsC(Number(event.target.value))}
               />
+            </>
+          ) : isBernoulli ? (
+            <>
+              <label htmlFor="upstream-elevation-input">Upstream elevation: {formatNumber(upstreamElevationFeet, 1)} ft</label>
+              <input id="upstream-elevation-input" type="range" min="0" max="200" step="1" value={upstreamElevationFeet} onChange={(event) => setUpstreamElevationFeet(Number(event.target.value))} />
+              <input aria-label="Upstream elevation in feet" type="number" min="0" max="200" step="1" value={upstreamElevationFeet} onChange={(event) => setUpstreamElevationFeet(Number(event.target.value))} />
+
+              <label htmlFor="upstream-pressure-input">Upstream pressure: {formatNumber(upstreamPressurePsi, 1)} psi</label>
+              <input id="upstream-pressure-input" type="range" min="0" max="150" step="1" value={upstreamPressurePsi} onChange={(event) => setUpstreamPressurePsi(Number(event.target.value))} />
+              <input aria-label="Upstream pressure in psi" type="number" min="0" max="150" step="1" value={upstreamPressurePsi} onChange={(event) => setUpstreamPressurePsi(Number(event.target.value))} />
+
+              <label htmlFor="upstream-velocity-input">Upstream velocity: {formatNumber(upstreamVelocityFeetPerSecond, 1)} ft/s</label>
+              <input id="upstream-velocity-input" type="range" min="0.5" max="10" step="0.1" value={upstreamVelocityFeetPerSecond} onChange={(event) => setUpstreamVelocityFeetPerSecond(Number(event.target.value))} />
+              <input aria-label="Upstream velocity in feet per second" type="number" min="0.5" max="10" step="0.1" value={upstreamVelocityFeetPerSecond} onChange={(event) => setUpstreamVelocityFeetPerSecond(Number(event.target.value))} />
+
+              <label htmlFor="downstream-elevation-input">Downstream elevation: {formatNumber(downstreamElevationFeet, 1)} ft</label>
+              <input id="downstream-elevation-input" type="range" min="0" max="200" step="1" value={downstreamElevationFeet} onChange={(event) => setDownstreamElevationFeet(Number(event.target.value))} />
+              <input aria-label="Downstream elevation in feet" type="number" min="0" max="200" step="1" value={downstreamElevationFeet} onChange={(event) => setDownstreamElevationFeet(Number(event.target.value))} />
+
+              <label htmlFor="downstream-pressure-input">Downstream pressure: {formatNumber(downstreamPressurePsi, 1)} psi</label>
+              <input id="downstream-pressure-input" type="range" min="0" max="150" step="1" value={downstreamPressurePsi} onChange={(event) => setDownstreamPressurePsi(Number(event.target.value))} />
+              <input aria-label="Downstream pressure in psi" type="number" min="0" max="150" step="1" value={downstreamPressurePsi} onChange={(event) => setDownstreamPressurePsi(Number(event.target.value))} />
+
+              <label htmlFor="downstream-velocity-input">Downstream velocity: {formatNumber(downstreamVelocityFeetPerSecond, 1)} ft/s</label>
+              <input id="downstream-velocity-input" type="range" min="0.5" max="10" step="0.1" value={downstreamVelocityFeetPerSecond} onChange={(event) => setDownstreamVelocityFeetPerSecond(Number(event.target.value))} />
+              <input aria-label="Downstream velocity in feet per second" type="number" min="0.5" max="10" step="0.1" value={downstreamVelocityFeetPerSecond} onChange={(event) => setDownstreamVelocityFeetPerSecond(Number(event.target.value))} />
             </>
           ) : (
             <>
@@ -421,6 +513,17 @@ export default function WaterFlowTool() {
               <div><dt>Head loss</dt><dd>{formatNumber(darcyWeisbachResult.headLossFeetPer100Feet, 3)} ft / 100 ft</dd></div>
               <div><dt>Pressure loss</dt><dd>{formatNumber(darcyWeisbachResult.pressureLossPsi, 3)} psi</dd></div>
             </dl>
+          ) : isBernoulli ? (
+            <dl className="metric-list">
+              <div><dt>Upstream pressure head</dt><dd>{formatNumber(bernoulliResult.upstreamPressureHeadFeet, 3)} ft</dd></div>
+              <div><dt>Upstream velocity head</dt><dd>{formatNumber(bernoulliResult.upstreamVelocityHeadFeet, 3)} ft</dd></div>
+              <div><dt>Upstream total head</dt><dd>{formatNumber(bernoulliResult.upstreamTotalHeadFeet, 3)} ft</dd></div>
+              <div><dt>Downstream pressure head</dt><dd>{formatNumber(bernoulliResult.downstreamPressureHeadFeet, 3)} ft</dd></div>
+              <div><dt>Downstream velocity head</dt><dd>{formatNumber(bernoulliResult.downstreamVelocityHeadFeet, 3)} ft</dd></div>
+              <div><dt>Downstream total head</dt><dd>{formatNumber(bernoulliResult.downstreamTotalHeadFeet, 3)} ft</dd></div>
+              <div><dt>Energy difference</dt><dd>{formatNumber(bernoulliResult.energyDifferenceFeet, 3)} ft</dd></div>
+              <div><dt>Energy difference</dt><dd>{formatNumber(bernoulliResult.energyDifferencePsi, 3)} psi</dd></div>
+            </dl>
           ) : (
             <dl className="metric-list">
               <div><dt>Diameter</dt><dd>{formatNumber(continuityResult.diameterFeet, 3)} ft</dd></div>
@@ -431,11 +534,13 @@ export default function WaterFlowTool() {
             </dl>
           )}
 
-          <div className="pipe-visual" aria-label="Pipe cross-section visualization">
-            <div className="pipe-circle" style={{ '--pipe-size': `${pipeVisualSizePercent}%` } as React.CSSProperties}>
-              <span>{formatNumber(diameterInches, 1)} in</span>
+          {!isBernoulli ? (
+            <div className="pipe-visual" aria-label="Pipe cross-section visualization">
+              <div className="pipe-circle" style={{ '--pipe-size': `${pipeVisualSizePercent}%` } as React.CSSProperties}>
+                <span>{formatNumber(diameterInches, 1)} in</span>
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
 

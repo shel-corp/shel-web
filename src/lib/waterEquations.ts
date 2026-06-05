@@ -40,6 +40,26 @@ export type DarcyWeisbachResult = DarcyWeisbachInputs & {
   pressureLossPsi: number;
 };
 
+export type BernoulliEnergyInputs = {
+  upstreamElevationFeet: number;
+  upstreamPressurePsi: number;
+  upstreamVelocityFeetPerSecond: number;
+  downstreamElevationFeet: number;
+  downstreamPressurePsi: number;
+  downstreamVelocityFeetPerSecond: number;
+};
+
+export type BernoulliEnergyResult = BernoulliEnergyInputs & {
+  upstreamPressureHeadFeet: number;
+  upstreamVelocityHeadFeet: number;
+  upstreamTotalHeadFeet: number;
+  downstreamPressureHeadFeet: number;
+  downstreamVelocityHeadFeet: number;
+  downstreamTotalHeadFeet: number;
+  energyDifferenceFeet: number;
+  energyDifferencePsi: number;
+};
+
 export type EquationOption = {
   id: string;
   name: string;
@@ -81,6 +101,9 @@ const PSI_PER_FOOT_OF_WATER = 0.433;
 // friction correlations or supplied by the problem.
 const STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED = 32.174;
 const VELOCITY_HEAD_DENOMINATOR = 2;
+const SQUARE_INCHES_PER_SQUARE_FOOT = 144;
+const WATER_UNIT_WEIGHT_POUNDS_PER_CUBIC_FOOT = 62.4;
+const FEET_OF_WATER_PER_PSI = SQUARE_INCHES_PER_SQUARE_FOOT / WATER_UNIT_WEIGHT_POUNDS_PER_CUBIC_FOOT;
 
 // Display-only bounds for the pipe cross-section graphic. The log scale keeps
 // small pipes visible while preventing large-pipe examples from overflowing.
@@ -133,11 +156,27 @@ export const fluidDynamicsEquationOptions: EquationOption[] = [
       '0.433 psi per ft of water converts calculated head loss into pressure loss.',
     ],
   },
+  {
+    id: 'bernoulli-energy',
+    name: 'Bernoulli energy equation',
+    formula: 'H = z + P/γ + v²/(2g)',
+    description:
+      'Adds elevation head, pressure head, and velocity head to compare total hydraulic energy at two points in a water system.',
+    examUse:
+      'Use it when a problem asks for total head, pressure head, velocity head, or energy change between two points. In this US customary form: z is feet, P is psi converted to feet of water, v is ft/s, and g is 32.174 ft/s².',
+    coefficientOrigin:
+      'How the numbers were discovered: Bernoulli expressed fluid energy as interchangeable heads—height, pressure, and motion—using conservation of mechanical energy. The pressure-head conversion comes from balancing pressure force against the unit weight of water; the velocity-head term comes from kinetic energy per unit weight.',
+    coefficientNotes: [
+      '2.31 ft of water per psi comes from converting 1 psi to 144 lb/ft², then dividing by water unit weight of about 62.4 lb/ft³.',
+      '32.174 ft/s² is standard gravitational acceleration. The 2g term converts velocity squared into velocity head.',
+      'Elevation head z is already measured in feet, so it adds directly to pressure head and velocity head.',
+      'A positive upstream-minus-downstream energy difference means available head was consumed by losses or delivered to downstream conditions.',
+    ],
+  },
 ];
 
 export const futureFluidDynamicsEquations = [
   'Reynolds number: laminar/transitional/turbulent flow classification',
-  'Bernoulli energy equation: elevation head, pressure head, and velocity head',
   'Detention time: volume divided by flow for basins, tanks, and clearwells',
   'Weir/orifice flow: estimating open-channel or restriction discharge',
 ] as const;
@@ -193,6 +232,31 @@ export function calculateDarcyWeisbachHeadLoss(inputs: DarcyWeisbachInputs): Dar
     headLossFeet,
     headLossFeetPer100Feet,
     pressureLossPsi,
+  };
+}
+
+export function calculateBernoulliEnergy(inputs: BernoulliEnergyInputs): BernoulliEnergyResult {
+  const upstreamPressureHeadFeet = inputs.upstreamPressurePsi * FEET_OF_WATER_PER_PSI;
+  const upstreamVelocityHeadFeet =
+    inputs.upstreamVelocityFeetPerSecond ** 2 / (VELOCITY_HEAD_DENOMINATOR * STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED);
+  const upstreamTotalHeadFeet = inputs.upstreamElevationFeet + upstreamPressureHeadFeet + upstreamVelocityHeadFeet;
+  const downstreamPressureHeadFeet = inputs.downstreamPressurePsi * FEET_OF_WATER_PER_PSI;
+  const downstreamVelocityHeadFeet =
+    inputs.downstreamVelocityFeetPerSecond ** 2 / (VELOCITY_HEAD_DENOMINATOR * STANDARD_GRAVITY_FEET_PER_SECOND_SQUARED);
+  const downstreamTotalHeadFeet = inputs.downstreamElevationFeet + downstreamPressureHeadFeet + downstreamVelocityHeadFeet;
+  const energyDifferenceFeet = upstreamTotalHeadFeet - downstreamTotalHeadFeet;
+  const energyDifferencePsi = energyDifferenceFeet * PSI_PER_FOOT_OF_WATER;
+
+  return {
+    ...inputs,
+    upstreamPressureHeadFeet,
+    upstreamVelocityHeadFeet,
+    upstreamTotalHeadFeet,
+    downstreamPressureHeadFeet,
+    downstreamVelocityHeadFeet,
+    downstreamTotalHeadFeet,
+    energyDifferenceFeet,
+    energyDifferencePsi,
   };
 }
 
