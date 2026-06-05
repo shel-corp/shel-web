@@ -401,6 +401,120 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
 }
 .future-equations li { margin-bottom: 8px; }
 
+.graph-agent-section h1 { max-width: 880px; }
+.graph-agent-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.92fr) minmax(320px, 1.08fr);
+  gap: 24px;
+  margin-top: 28px;
+}
+.graph-chat-panel,
+.graph-output-panel {
+  border: 1px solid var(--sc-gray-1);
+  background: rgba(255, 255, 255, 0.018);
+  padding: 20px;
+  min-width: 0;
+}
+.graph-chat-panel h2,
+.graph-output-panel h2 { font-size: 22px; margin-bottom: 12px; }
+.graph-tool-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+.graph-tool-strip span {
+  border: 1px solid color-mix(in srgb, var(--sc-cyan) 28%, var(--sc-gray-1));
+  color: var(--sc-cyan);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  padding: 6px 8px;
+}
+.graph-chat-log {
+  border: 1px solid var(--sc-gray-1);
+  display: grid;
+  gap: 12px;
+  max-height: 440px;
+  overflow: auto;
+  padding: 12px;
+}
+.graph-message {
+  border-left: 3px solid var(--sc-gray-1);
+  padding-left: 12px;
+}
+.graph-message-agent { border-left-color: var(--sc-cyan); }
+.graph-message strong {
+  display: block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.graph-message p { margin-bottom: 8px; }
+.tool-call-card {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+.tool-call-card span,
+.tool-call-card small,
+.graph-chat-form label {
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+.tool-call-card code {
+  color: var(--sc-cyan);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+.graph-chat-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.graph-chat-form textarea {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  color: var(--sc-offwhite);
+  font: inherit;
+  padding: 12px;
+  resize: vertical;
+}
+.graph-chat-form button,
+.graph-examples button {
+  border: 1px solid var(--sc-gray-2);
+  background: transparent;
+  color: var(--sc-offwhite);
+  cursor: pointer;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.graph-chat-form button:hover,
+.graph-examples button:hover { border-color: var(--sc-cyan); color: var(--sc-cyan); }
+.graph-examples {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+.graph-svg-wrap {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  margin-top: 18px;
+  overflow-x: auto;
+}
+.graph-svg-wrap svg {
+  display: block;
+  min-height: 320px;
+  min-width: 620px;
+  width: 100%;
+}
+.graph-metrics { margin-top: 18px; }
+
 @media (max-width: 760px) {
-  .water-tool-grid { grid-template-columns: 1fr; }
+  .water-tool-grid,
+  .graph-agent-grid { grid-template-columns: 1fr; }
 }

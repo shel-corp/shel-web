@@ -1,3 +1,5 @@
+import { graphProductMetadata } from '../lib/graphAgent';
+
 export type Product = {
   name: string;
   description: string;
@@ -29,6 +31,7 @@ export const products: Product[] = [
     description: 'Surfaces performance characteristics across development workflows.',
     department: 'Workflow Compliance',
   },
+  graphProductMetadata,
   {
     name: 'Water Flow Study Tool',
     description: 'Interactive water-operator exam practice for fluid-dynamics equations, starting with continuity flow rate.',
