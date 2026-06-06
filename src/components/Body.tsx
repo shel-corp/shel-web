@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Home from '../views/Home';
 import Docs from '../views/Docs';
 import Products from '../views/Products';
+import GraphAgent from '../views/GraphAgent';
 import WaterFlowTool from '../views/WaterFlowTool';
 import Notes from '../views/Notes';
 import Careers from '../views/Careers';
@@ -19,6 +20,7 @@ export default function Body() {
         <Route path="/" element={<Home />} />
         <Route path="/docs" element={<Docs />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/products/graph-agent" element={<GraphAgent />} />
         <Route path="/products/water-flow" element={<WaterFlowTool />} />
         <Route path="/notes" element={<Notes />} />
         <Route path="/careers" element={<Careers />} />
