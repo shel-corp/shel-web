@@ -62,6 +62,17 @@ export const graphProductMetadata = {
   href: "/products/graph-agent",
 } as const;
 
+export const graphAgentPresentation = {
+  layout: "chat-canvas",
+  heroTitle: "Chat with a graph canvas.",
+  primaryRegions: ["chat-thread", "graph-canvas"],
+  canvasPrinciples: [
+    "Make the rendered graph canvas the dominant surface.",
+    "Keep tool chrome secondary to the chat and canvas loop.",
+    "Show the latest chart as an artifact, not a report card.",
+  ],
+} as const;
+
 const monthPattern = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i;
 const labeledNumberPattern = /([a-z][a-z0-9%/ -]{0,32}?)\s*[:=]?\s*(-?\d+(?:\.\d+)?)/gi;
 const pairPattern = /\((-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\)/g;

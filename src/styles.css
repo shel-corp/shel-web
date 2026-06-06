@@ -401,88 +401,105 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
 }
 .future-equations li { margin-bottom: 8px; }
 
-.graph-agent-section h1 { max-width: 880px; }
-.graph-agent-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 0.92fr) minmax(320px, 1.08fr);
-  gap: 24px;
-  margin-top: 28px;
+.graph-agent-section {
+  max-width: 1440px;
 }
-.graph-chat-panel,
-.graph-output-panel {
+.graph-agent-hero h1 { max-width: 860px; }
+.graph-agent-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(520px, 1.68fr) minmax(220px, 0.6fr);
+  gap: 18px;
+  margin-top: 28px;
+  min-height: 720px;
+}
+.graph-chat-rail,
+.graph-canvas-stage,
+.graph-context-rail {
   border: 1px solid var(--sc-gray-1);
   background: rgba(255, 255, 255, 0.018);
-  padding: 20px;
   min-width: 0;
 }
-.graph-chat-panel h2,
-.graph-output-panel h2 { font-size: 22px; margin-bottom: 12px; }
-.graph-tool-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0 18px;
+.graph-chat-rail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
 }
-.graph-tool-strip span {
-  border: 1px solid color-mix(in srgb, var(--sc-cyan) 28%, var(--sc-gray-1));
-  color: var(--sc-cyan);
+.graph-chat-header,
+.graph-canvas-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--sc-gray-1);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+}
+.graph-chat-header h2,
+.graph-canvas-toolbar h2,
+.graph-context-rail h2 { font-size: 21px; margin: 0; }
+.graph-chat-header span,
+.canvas-kicker,
+.canvas-pill,
+.graph-canvas-stats span {
+  color: var(--sc-gray-2);
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
-  padding: 6px 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.graph-chat-log {
-  border: 1px solid var(--sc-gray-1);
+.graph-chat-thread {
+  align-content: start;
   display: grid;
   gap: 12px;
-  max-height: 440px;
   overflow: auto;
-  padding: 12px;
+  padding: 18px;
 }
-.graph-message {
-  border-left: 3px solid var(--sc-gray-1);
-  padding-left: 12px;
+.chat-bubble {
+  border: 1px solid var(--sc-gray-1);
+  border-radius: 18px;
+  max-width: 92%;
+  padding: 12px 14px;
 }
-.graph-message-agent { border-left-color: var(--sc-cyan); }
-.graph-message strong {
+.chat-bubble-user {
+  background: rgba(77, 227, 227, 0.08);
+  border-color: color-mix(in srgb, var(--sc-cyan) 34%, var(--sc-gray-1));
+  justify-self: end;
+}
+.chat-bubble-agent {
+  background: rgba(255, 255, 255, 0.03);
+  justify-self: start;
+}
+.chat-bubble strong {
+  color: var(--sc-offwhite);
   display: block;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  margin-bottom: 4px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
 }
-.graph-message p { margin-bottom: 8px; }
-.tool-call-card {
-  border: 1px solid var(--sc-gray-1);
-  background: #070909;
+.chat-bubble p { margin: 0; }
+.graph-composer {
+  border-top: 1px solid var(--sc-gray-1);
   display: grid;
-  gap: 4px;
-  padding: 10px;
+  gap: 10px;
+  padding: 16px;
 }
+.graph-composer label,
 .tool-call-card span,
-.tool-call-card small,
-.graph-chat-form label {
+.tool-call-card small {
   color: var(--sc-gray-2);
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
 }
-.tool-call-card code {
-  color: var(--sc-cyan);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-}
-.graph-chat-form {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-}
-.graph-chat-form textarea {
+.graph-composer textarea {
   border: 1px solid var(--sc-gray-1);
   background: #070909;
+  border-radius: 14px;
   color: var(--sc-offwhite);
   font: inherit;
   padding: 12px;
   resize: vertical;
 }
-.graph-chat-form button,
+.graph-composer button,
 .graph-examples button {
   border: 1px solid var(--sc-gray-2);
   background: transparent;
@@ -493,28 +510,101 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   padding: 10px 12px;
   text-align: left;
 }
-.graph-chat-form button:hover,
+.graph-composer button {
+  background: var(--sc-cyan);
+  color: var(--sc-black);
+  text-align: center;
+}
+.graph-composer button:hover,
 .graph-examples button:hover { border-color: var(--sc-cyan); color: var(--sc-cyan); }
-.graph-examples {
+.graph-composer button:hover { color: var(--sc-black); }
+.graph-canvas-stage {
+  background: radial-gradient(circle at 70% 14%, rgba(77, 227, 227, 0.08), transparent 34%), #050707;
   display: grid;
-  gap: 8px;
-  margin-top: 18px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+.canvas-pill {
+  border: 1px solid color-mix(in srgb, var(--sc-cyan) 42%, var(--sc-gray-1));
+  color: var(--sc-cyan);
+  padding: 8px 10px;
+}
+.graph-canvas-frame {
+  align-items: center;
+  display: flex;
+  min-height: 0;
+  padding: 18px;
 }
 .graph-svg-wrap {
-  border: 1px solid var(--sc-gray-1);
+  border: 1px solid rgba(77, 227, 227, 0.24);
   background: #070909;
-  margin-top: 18px;
-  overflow-x: auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.44), 0 0 42px rgba(77, 227, 227, 0.08);
+  overflow: hidden;
+  width: 100%;
 }
 .graph-svg-wrap svg {
   display: block;
-  min-height: 320px;
-  min-width: 620px;
+  min-height: 520px;
   width: 100%;
 }
-.graph-metrics { margin-top: 18px; }
+.graph-canvas-caption {
+  border-top: 1px solid var(--sc-gray-1);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+}
+.graph-canvas-caption p { margin: 0; max-width: 760px; }
+.graph-canvas-stats {
+  align-items: end;
+  display: grid;
+  gap: 4px;
+  text-align: right;
+  white-space: nowrap;
+}
+.graph-context-rail {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 18px;
+}
+.graph-tool-stack {
+  display: grid;
+  gap: 10px;
+}
+.graph-tool-stack div,
+.tool-call-card {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+}
+.graph-tool-stack strong,
+.tool-call-card code {
+  color: var(--sc-cyan);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+.graph-tool-stack span {
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+.graph-examples {
+  display: grid;
+  gap: 8px;
+}
+.graph-examples .status { margin-bottom: 2px; }
+
+@media (max-width: 1040px) {
+  .graph-agent-workspace { grid-template-columns: 1fr; }
+  .graph-chat-rail { min-height: 520px; }
+  .graph-canvas-caption { display: grid; }
+  .graph-canvas-stats { text-align: left; }
+}
 
 @media (max-width: 760px) {
-  .water-tool-grid,
-  .graph-agent-grid { grid-template-columns: 1fr; }
+  .water-tool-grid { grid-template-columns: 1fr; }
+  .graph-svg-wrap svg { min-height: 360px; }
 }
