@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   answerGraphQuestion,
+  graphAgentPresentation,
   graphAgentTools,
   graphProductMetadata,
 } from "../src/lib/graphAgent";
@@ -43,6 +44,15 @@ test("graph agent creates function plots for common math questions", () => {
   assert.ok(response.chart.points.some((point) => point.x === -3 && point.y === 9));
   assert.ok(response.chart.points.some((point) => point.x === 0 && point.y === 0));
   assert.ok(response.chart.points.some((point) => point.x === 3 && point.y === 9));
+});
+
+test("graph agent presentation is chat plus canvas first", () => {
+  assert.equal(graphAgentPresentation.layout, "chat-canvas");
+  assert.match(graphAgentPresentation.heroTitle, /canvas/i);
+  assert.ok(graphAgentPresentation.primaryRegions.includes("chat-thread"));
+  assert.ok(graphAgentPresentation.primaryRegions.includes("graph-canvas"));
+  assert.ok(graphAgentPresentation.canvasPrinciples.some((principle) => principle.includes("dominant")));
+  assert.ok(graphAgentPresentation.canvasPrinciples.some((principle) => principle.includes("tool chrome")));
 });
 
 test("graph agent product metadata adds a dedicated products tab", () => {
