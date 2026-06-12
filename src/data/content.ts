@@ -1,4 +1,5 @@
 import { graphProductMetadata } from '../lib/graphAgent';
+import { diagramProductMetadata } from '../lib/diagramWorkspace';
 
 export type Product = {
   name: string;
@@ -32,6 +33,7 @@ export const products: Product[] = [
     department: 'Workflow Compliance',
   },
   graphProductMetadata,
+  diagramProductMetadata,
   {
     name: 'Water Flow Study Tool',
     description: 'Interactive water-operator exam practice for fluid-dynamics equations, starting with continuity flow rate.',

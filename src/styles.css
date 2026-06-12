@@ -608,3 +608,199 @@ p { margin: 0 0 14px 0; color: var(--sc-gray-2); max-width: 720px; }
   .water-tool-grid { grid-template-columns: 1fr; }
   .graph-svg-wrap svg { min-height: 360px; }
 }
+
+.diagram-workspace-section {
+  max-width: 1280px;
+}
+.diagram-workspace-hero p { max-width: 760px; }
+.diagram-workspace-shell {
+  border: 1px solid var(--sc-gray-1);
+  background: linear-gradient(135deg, rgba(77, 227, 227, 0.04), transparent 30%), #060808;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.74fr) minmax(480px, 1.7fr) minmax(260px, 0.9fr);
+  min-height: 640px;
+  margin-top: 28px;
+}
+.diagram-workspace-shell > * {
+  border-left: 1px solid var(--sc-gray-1);
+  min-width: 0;
+}
+.diagram-workspace-shell > *:first-child { border-left: none; }
+.diagram-tool-rail,
+.diagram-inspector {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 20px;
+}
+.diagram-tool-rail ul {
+  color: var(--sc-gray-2);
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 18px;
+}
+.diagram-stat-grid {
+  display: grid;
+  gap: 10px;
+}
+.diagram-stat-grid span {
+  border: 1px solid var(--sc-gray-1);
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  padding: 12px;
+}
+.diagram-stat-grid strong { color: var(--sc-cyan); font-size: 20px; }
+.diagram-canvas-panel {
+  border-top: none;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-width: none;
+  padding: 0;
+}
+.diagram-canvas-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--sc-gray-1);
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+}
+.diagram-svg-wrap {
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+}
+.diagram-svg-wrap svg {
+  background: #070909;
+  border: 1px solid rgba(77, 227, 227, 0.22);
+  display: block;
+  min-width: 820px;
+  width: 100%;
+}
+.diagram-wire {
+  fill: none;
+  marker-end: url(#diagramArrow);
+  stroke: #5F666B;
+  stroke-dasharray: 7 7;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+.diagram-group {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+.diagram-group:not(.active) { opacity: 0.58; }
+.diagram-group.active { filter: drop-shadow(0 0 20px rgba(77, 227, 227, 0.18)); }
+.diagram-node text { pointer-events: none; }
+.diagram-node-note rect { stroke-dasharray: 6 5; }
+.diagram-node-connector rect { rx: 999px; }
+.diagram-group-list {
+  display: grid;
+  gap: 9px;
+}
+.diagram-group-list button {
+  align-items: center;
+  border: 1px solid var(--sc-gray-1);
+  background: transparent;
+  color: var(--sc-offwhite);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  padding: 12px;
+  text-align: left;
+}
+.diagram-group-list button.active { border-color: var(--sc-cyan); background: rgba(77, 227, 227, 0.06); }
+.diagram-group-list button span {
+  border-radius: 999px;
+  grid-row: span 2;
+  height: 12px;
+  width: 12px;
+}
+.diagram-group-list small {
+  color: var(--sc-gray-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+.diagram-subview-card {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  padding: 14px;
+}
+.diagram-subview-card .status { margin-bottom: 6px; }
+.mini-subview {
+  border: 1px solid rgba(201, 164, 73, 0.3);
+  margin-top: 16px;
+  overflow: auto;
+}
+.mini-subview svg {
+  display: block;
+  min-width: 520px;
+  width: 100%;
+}
+.diagram-principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+.diagram-principles article {
+  border: 1px solid var(--sc-gray-1);
+  background: rgba(242, 244, 245, 0.025);
+  padding: 18px;
+}
+.diagram-principles h3 { color: var(--sc-cyan); }
+
+@media (max-width: 1120px) {
+  .diagram-workspace-shell { grid-template-columns: 1fr; }
+  .diagram-workspace-shell > * { border-left: none; border-top: 1px solid var(--sc-gray-1); }
+  .diagram-workspace-shell > *:first-child { border-top: none; }
+}
+
+@media (max-width: 760px) {
+  .diagram-canvas-toolbar { align-items: flex-start; display: grid; }
+  .diagram-svg-wrap svg { min-width: 720px; }
+}
+
+.diagram-button-stack {
+  display: grid;
+  gap: 9px;
+}
+.diagram-button-stack button,
+.diagram-field input {
+  border: 1px solid var(--sc-gray-1);
+  background: #070909;
+  color: var(--sc-offwhite);
+  font: inherit;
+  padding: 10px 12px;
+}
+.diagram-button-stack button {
+  cursor: pointer;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  text-align: left;
+}
+.diagram-button-stack button:hover:not(:disabled) {
+  border-color: var(--sc-cyan);
+  color: var(--sc-cyan);
+}
+.diagram-button-stack button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.diagram-field {
+  color: var(--sc-gray-2);
+  display: grid;
+  gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+.functional-node { cursor: pointer; }
+.functional-node.selected rect {
+  filter: drop-shadow(0 0 18px rgba(77, 227, 227, 0.22));
+}
+.functional-sketchboard .diagram-canvas-panel {
+  min-height: 640px;
+}

@@ -5,6 +5,7 @@ import Docs from '../views/Docs';
 import Products from '../views/Products';
 import GraphAgent from '../views/GraphAgent';
 import WaterFlowTool from '../views/WaterFlowTool';
+import DiagramWorkspace from '../views/DiagramWorkspace';
 import Notes from '../views/Notes';
 import Careers from '../views/Careers';
 import Contact from '../views/Contact';
@@ -21,6 +22,7 @@ export default function Body() {
         <Route path="/docs" element={<Docs />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/graph-agent" element={<GraphAgent />} />
+        <Route path="/products/nested-sketchboard" element={<DiagramWorkspace />} />
         <Route path="/products/water-flow" element={<WaterFlowTool />} />
         <Route path="/notes" element={<Notes />} />
         <Route path="/careers" element={<Careers />} />
